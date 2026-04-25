@@ -2501,3 +2501,82 @@ En el Módulo 3 aprenderás:
     },
   ],
 };
+
+
+// ═══════════════════════════════════════════════════════════
+// SEED ROUTE HANDLER
+// ═══════════════════════════════════════════════════════════
+
+export async function POST() {
+  try {
+    // 1. Create/ensure teacher user
+    const teacherEmail = 'profesor@chambari.com'
+    const teacherPass = await hashPassword('chambari2024')
+    let teacher = await db.user.findUnique({ where: { email: teacherEmail } })
+    if (!teacher) {
+      teacher = await db.user.create({
+        data: { email: teacherEmail, password: teacherPass, name: 'Profesor Chambari', role: 'TEACHER' }
+      })
+    }
+
+    // 2. Seed modules and lessons
+    const modulesData = [MODULE_1, MODULE_2]
+    let totalLessons = 0
+
+    for (const modData of modulesData) {
+      let mod = await db.module.findFirst({ where: { title: modData.title } })
+      if (!mod) {
+        mod = await db.module.create({
+          data: {
+            title: modData.title,
+            description: modData.description,
+            teacherId: teacher.id,
+            orderIndex: modulesData.indexOf(modData),
+            status: 'PUBLISHED',
+          }
+        })
+      }
+
+      for (const lessonData of modData.lessons) {
+        const existing = await db.lesson.findFirst({
+          where: { moduleId: mod.id, title: lessonData.title }
+        })
+        if (!existing) {
+          await db.lesson.create({
+            data: {
+              moduleId: mod.id,
+              teacherId: teacher.id,
+              title: lessonData.title,
+              description: lessonData.description,
+              content: lessonData.content,
+              orderIndex: lessonData.orderIndex,
+              status: 'PUBLISHED',
+            }
+          })
+          totalLessons++
+        }
+      }
+    }
+
+    // 3. Seed phonetic entries
+    let phoneticCount = 0
+    for (const entry of PHONETIC_ENTRIES) {
+      const existing = await db.phoneticEntry.findUnique({ where: { word: entry.word } })
+      if (!existing) {
+        await db.phoneticEntry.create({ data: entry })
+        phoneticCount++
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Seed completado exitosamente',
+      modules: modulesData.length,
+      lessons: totalLessons,
+      phonetics: phoneticCount,
+    })
+  } catch (error: any) {
+    console.error('Seed error:', error)
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+  }
+}
