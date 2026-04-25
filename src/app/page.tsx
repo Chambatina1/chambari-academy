@@ -4,9 +4,10 @@
    CHAMBARI ACADEMY — Complete Single-Page Application
    ============================================================ */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
 
 // ── shadcn/ui Components ──────────────────────────────────────
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,9 @@ import {
   Upload, CheckCircle, Circle, Play, Eye, Download, RefreshCw,
   Globe, Mic, Volume2, FileText, PenTool, ArrowLeft, Loader2,
   Star, Award, Clock, Target, Zap, Shield,
-  Brain, Heart, Lightbulb, Library, Settings
+  Brain, Heart, Lightbulb, Library, Settings,
+  Languages, MessageCircle, Map, BookMarked, Headphones,
+  ClipboardList, Trophy, Flame, Gem, Palette
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────
@@ -1725,6 +1728,49 @@ function PhoneticDictionary({ entries, onRefresh, onSearch }: { entries: Phoneti
 // ════════════════════════════════════════════════════════════════
 //  STUDENT DASHBOARD
 // ════════════════════════════════════════════════════════════════
+// Helper: topic-based icon and color for lesson cards
+const LESSON_ICONS: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
+  "diagnóstico": { icon: ClipboardList, color: "text-violet-600", bg: "bg-violet-100" },
+  "saludo": { icon: MessageCircle, color: "text-blue-600", bg: "bg-blue-100" },
+  "alfabeto": { icon: BookMarked, color: "text-cyan-600", bg: "bg-cyan-100" },
+  "pronunciación": { icon: Volume2, color: "text-pink-600", bg: "bg-pink-100" },
+  "vocabulario": { icon: Languages, color: "text-orange-600", bg: "bg-orange-100" },
+  "aula": { icon: School, color: "text-teal-600", bg: "bg-teal-100" },
+  "número": { icon: Hash, color: "text-indigo-600", bg: "bg-indigo-100" },
+  "fecha": { icon: Calendar, color: "text-indigo-600", bg: "bg-indigo-100" },
+  "familia": { icon: Heart, color: "text-rose-600", bg: "bg-rose-100" },
+  "rutina": { icon: Clock, color: "text-amber-600", bg: "bg-amber-100" },
+  "comida": { icon: Utensils, color: "text-red-600", bg: "bg-red-100" },
+  "restaurante": { icon: Utensils, color: "text-red-600", bg: "bg-red-100" },
+  "lugar": { icon: Map, color: "text-emerald-600", bg: "bg-emerald-100" },
+  "dirección": { icon: Map, color: "text-emerald-600", bg: "bg-emerald-100" },
+  "verbo": { icon: PenTool, color: "text-blue-600", bg: "bg-blue-100" },
+  "artículo": { icon: BookOpen, color: "text-sky-600", bg: "bg-sky-100" },
+  "pronombre": { icon: Users, color: "text-purple-600", bg: "bg-purple-100" },
+  "presente": { icon: Play, color: "text-green-600", bg: "bg-green-100" },
+  "pasado": { icon: History, color: "text-stone-600", bg: "bg-stone-100" },
+  "futuro": { icon: Zap, color: "text-yellow-600", bg: "bg-yellow-100" },
+  "preposición": { icon: Target, color: "text-lime-600", bg: "bg-lime-100" },
+  "adjetivo": { icon: Palette, color: "text-fuchsia-600", bg: "bg-fuchsia-100" },
+  "adverbio": { icon: Sparkles, color: "text-fuchsia-600", bg: "bg-fuchsia-100" },
+  "repaso": { icon: Trophy, color: "text-emerald-600", bg: "bg-emerald-100" },
+  "autoevaluación": { icon: Award, color: "text-emerald-600", bg: "bg-emerald-100" },
+};
+// fallback icons
+const School = GraduationCap;
+const Hash = Target;
+const Calendar = Clock;
+const History = BookOpen;
+const Utensils = BookOpen;
+
+function getLessonIcon(title: string) {
+  const lower = title.toLowerCase();
+  for (const [key, val] of Object.entries(LESSON_ICONS)) {
+    if (lower.includes(key)) return val;
+  }
+  return { icon: BookOpen, color: "text-emerald-600", bg: "bg-emerald-100" };
+}
+
 function StudentDashboard({ user, modules, progressData, accessGrants, onRefresh, onSelectLesson }: { user: User; modules: Module[]; progressData: StudentProgress[]; accessGrants: StudentAccess[]; onRefresh: () => void; onSelectLesson: (l: Lesson) => void }) {
   const [accessibleLessons, setAccessibleLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1732,25 +1778,20 @@ function StudentDashboard({ user, modules, progressData, accessGrants, onRefresh
   const loadAccessible = useCallback(async () => {
     if (modules.length === 0) { setLoading(false); return; }
     try {
-      // Fetch access grants for this student
       const grants = await api<StudentAccess[]>(`/api/access`);
       const accessMap = new Set(grants.filter((g) => g.studentId === user.id && g.active).map((g) => g.lessonId));
       
-      // Fetch all lessons
       const allLessons: Lesson[] = [];
       for (const mod of modules) {
         const lessons = await api<Lesson[]>(`/api/lessons?moduleId=${mod.id}`);
         allLessons.push(...lessons.map((l) => ({ ...l, moduleId: mod.id })));
       }
       
-      // Filter to accessible + published lessons, sorted by order
       const accessible = allLessons
         .filter((l) => l.status === "PUBLISHED")
         .sort((a, b) => a.orderIndex - b.orderIndex);
       
-      // Also include lessons that have progress (in case access was removed)
       const progressLessonIds = new Set(progressData.map((p) => p.lessonId));
-      
       const final = accessible.filter((l) => accessMap.has(l.id) || progressLessonIds.has(l.id));
       setAccessibleLessons(final);
     } catch { /* silent */ }
@@ -1764,9 +1805,25 @@ function StudentDashboard({ user, modules, progressData, accessGrants, onRefresh
     return p || { progressPercent: 0, completed: false };
   };
 
+  // Group lessons by module
+  const lessonsByModule = useMemo(() => {
+    const grouped: { mod: Module; lessons: Lesson[] }[] = [];
+    for (const mod of modules) {
+      const modLessons = accessibleLessons.filter((l) => l.moduleId === mod.id);
+      if (modLessons.length > 0) grouped.push({ mod, lessons: modLessons });
+    }
+    return grouped;
+  }, [modules, accessibleLessons]);
+
+  // Stats
+  const totalLessons = accessibleLessons.length;
+  const completedLessons = accessibleLessons.filter((l) => getProgress(l.id).completed).length;
+  const overallProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
   if (loading) {
     return (
       <div className="p-4 space-y-4">
+        <Skeleton className="h-32 rounded-2xl" />
         {[1, 2, 3].map((i) => (
           <Skeleton key={i} className="h-24 rounded-xl" />
         ))}
@@ -1775,64 +1832,335 @@ function StudentDashboard({ user, modules, progressData, accessGrants, onRefresh
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-4 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-emerald-900">📚 Mi Pupitre</h1>
-          <p className="text-muted-foreground text-sm">Hola, {user.name}</p>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-4 space-y-5 pb-24">
+      {/* Welcome Header with Stats */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 p-5 text-white"
+      >
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="h-4 w-4 text-amber-300" />
+            <p className="text-emerald-100 text-xs font-medium">Chambari Academy</p>
+          </div>
+          <h1 className="text-xl font-bold">Hola, {user.name.split(" ")[0]}!</h1>
+          <p className="text-emerald-200 text-sm mt-0.5">Continua tu aprendizaje de ingles</p>
+          
+          {/* Stats Row */}
+          <div className="flex gap-4 mt-4">
+            <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
+              <BookOpen className="h-4 w-4" />
+              <div>
+                <p className="text-xs text-emerald-100">Lecciones</p>
+                <p className="text-sm font-bold">{completedLessons}/{totalLessons}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
+              <Trophy className="h-4 w-4" />
+              <div>
+                <p className="text-xs text-emerald-100">Progreso</p>
+                <p className="text-sm font-bold">{overallProgress}%</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
+              <Flame className="h-4 w-4 text-orange-300" />
+              <div>
+                <p className="text-xs text-emerald-100">Racha</p>
+                <p className="text-sm font-bold">{completedLessons > 0 ? Math.min(completedLessons, 7) : 0} dias</p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
       {accessibleLessons.length === 0 ? (
-        <Card className="rounded-xl">
+        <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
           <CardContent className="py-12 text-center">
-            <BookOpen className="h-12 w-12 mx-auto text-emerald-300 mb-3" />
-            <p className="text-muted-foreground">No hay lecciones disponibles todavía</p>
-            <p className="text-xs text-muted-foreground mt-1">Tu profesor te dará acceso pronto</p>
+            <div className="h-16 w-16 mx-auto bg-emerald-100 rounded-2xl flex items-center justify-center mb-3">
+              <BookOpen className="h-8 w-8 text-emerald-400" />
+            </div>
+            <p className="font-medium text-emerald-900">No hay lecciones disponibles</p>
+            <p className="text-xs text-muted-foreground mt-1">Tu profesor te dara acceso pronto</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
-          {accessibleLessons.map((lesson, index) => {
-            const prog = getProgress(lesson.id);
+        <div className="space-y-6">
+          {lessonsByModule.map(({ mod, lessons: modLessons }, mIdx) => {
+            const modCompleted = modLessons.filter((l) => getProgress(l.id).completed).length;
+            const modProgress = Math.round((modCompleted / modLessons.length) * 100);
             return (
               <motion.div
-                key={lesson.id}
-                initial={{ opacity: 0, y: 10 }}
+                key={mod.id}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: mIdx * 0.1 }}
               >
-                <Card
-                  className="rounded-xl cursor-pointer hover:shadow-md transition-all border-emerald-100 overflow-hidden"
-                  onClick={() => onSelectLesson(lesson)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      <div className={`h-12 w-12 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 ${prog.completed ? "bg-emerald-600 text-white" : "bg-amber-100 text-amber-700"}`}>
-                        {prog.completed ? <CheckCircle className="h-6 w-6" /> : lesson.orderIndex + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-sm truncate">{lesson.title}</p>
-                          {prog.completed && <Badge className="bg-emerald-100 text-emerald-700 text-[10px]">Completada</Badge>}
-                        </div>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">{lesson.description || `Lección ${lesson.orderIndex + 1}`}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Progress value={prog.progressPercent} className="h-1.5 flex-1" />
-                          <span className="text-[10px] text-muted-foreground font-medium">{prog.progressPercent}%</span>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                {/* Module Header */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-sm font-bold">
+                      {mIdx + 1}
                     </div>
-                  </CardContent>
-                </Card>
+                    <div>
+                      <h2 className="font-bold text-sm text-emerald-900">{mod.title.replace(/^Módulo \d+:\s*/, "")}</h2>
+                      <p className="text-[10px] text-muted-foreground">{modCompleted} de {modLessons.length} completadas</p>
+                    </div>
+                  </div>
+                  <Badge variant={modProgress === 100 ? "default" : "secondary"} className={modProgress === 100 ? "bg-emerald-600 text-[10px]" : "text-[10px]"}>
+                    {modProgress}%
+                  </Badge>
+                </div>
+                <Progress value={modProgress} className="h-1 mb-3 bg-emerald-100" />
+
+                {/* Lessons Grid */}
+                <div className="space-y-2.5">
+                  {modLessons.map((lesson, index) => {
+                    const prog = getProgress(lesson.id);
+                    const iconData = getLessonIcon(lesson.title);
+                    const IconComp = iconData.icon;
+                    return (
+                      <motion.div
+                        key={lesson.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: mIdx * 0.1 + index * 0.04 }}
+                      >
+                        <Card
+                          className="rounded-xl cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-emerald-50 overflow-hidden group"
+                          onClick={() => onSelectLesson(lesson)}
+                        >
+                          <CardContent className="p-3.5">
+                            <div className="flex items-center gap-3">
+                              {/* Icon */}
+                              <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${prog.completed ? "bg-emerald-600 text-white shadow-md shadow-emerald-200" : iconData.bg + " " + iconData.color}`}>
+                                {prog.completed ? <CheckCircle className="h-5 w-5" /> : <IconComp className="h-5 w-5" />}
+                              </div>
+                              {/* Text */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <p className={`font-semibold text-sm truncate ${prog.completed ? "text-emerald-700" : "text-gray-800"}`}>{lesson.title.replace(/^Clase \d+:\s*/, "")}</p>
+                                </div>
+                                <p className="text-[11px] text-muted-foreground truncate mt-0.5 line-clamp-1">
+                                  {lesson.description || `Leccion ${lesson.orderIndex + 1}`}
+                                </p>
+                                {/* Mini progress */}
+                                {!prog.completed && prog.progressPercent > 0 && (
+                                  <div className="flex items-center gap-1.5 mt-1.5">
+                                    <Progress value={prog.progressPercent} className="h-1 flex-1 bg-gray-100" />
+                                    <span className="text-[9px] text-muted-foreground">{prog.progressPercent}%</span>
+                                  </div>
+                                )}
+                              </div>
+                              {/* Arrow */}
+                              <div className={`shrink-0 transition-transform group-hover:translate-x-1 ${prog.completed ? "text-emerald-400" : "text-gray-300"}`}>
+                                <ChevronRight className="h-5 w-5" />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </motion.div>
             );
           })}
         </div>
       )}
     </motion.div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  LESSON CONTENT RENDERER — Visual & Didactic
+// ════════════════════════════════════════════════════════════════
+function LessonContentRenderer({ content }: { content: string }) {
+  const parsed = useMemo(() => {
+    if (!content) return [];
+    const lines = content.split("\n");
+    const blocks: { type: string; content: string; items?: string[] }[] = [];
+    let currentBlock: { type: string; content: string; items: string[] } | null = null;
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line) {
+        if (currentBlock) { blocks.push(currentBlock); currentBlock = null; }
+        continue;
+      }
+      // Detect headers (## or ### or numbered like "1." at start)
+      if (/^#{1,3}\s/.test(line) || /^\d+\.\s+[A-ZÁÉÍÓÚÑ]/.test(line)) {
+        if (currentBlock) { blocks.push(currentBlock); currentBlock = null; }
+        const cleanLine = line.replace(/^#{1,3}\s*/, "").replace(/^\d+\.\s*/, "");
+        blocks.push({ type: "header", content: cleanLine });
+        continue;
+      }
+      // Detect bullet points (- or * or •)
+      if (/^[-*•]\s/.test(line)) {
+        if (!currentBlock || currentBlock.type !== "list") {
+          if (currentBlock) blocks.push(currentBlock);
+          currentBlock = { type: "list", content: "", items: [] };
+        }
+        const itemText = line.replace(/^[-*•]\s*/, "");
+        // Check for bold (text between **)
+        currentBlock.items!.push(itemText);
+        continue;
+      }
+      // Detect example lines (Ejemplo:, Example:, Ej:)
+      if (/^(Ejemplo|Example|Ej)\s*:/i.test(line)) {
+        if (currentBlock) blocks.push(currentBlock);
+        blocks.push({ type: "example", content: line.replace(/^(Ejemplo|Example|Ej)\s*:\s*/i, "") });
+        currentBlock = null;
+        continue;
+      }
+      // Detect tip/note lines (Nota:, Tip:, Recuerda:, Importante:)
+      if (/^(Nota|Tip|Recuerda|Importante|Ojo|Atención)\s*[:.]/i.test(line)) {
+        if (currentBlock) blocks.push(currentBlock);
+        blocks.push({ type: "tip", content: line.replace(/^(Nota|Tip|Recuerda|Importante|Ojo|Atención)\s*[:.]\s*/i, "") });
+        currentBlock = null;
+        continue;
+      }
+      // Detect dialog/conversation lines (A:, B:, Person 1:, etc.)
+      if /^[A-B]:\s/i.test(line) || /^(Person|Persona|Profesor|Estudiante)\s*\d?\s*:/i.test(line)) {
+        if (!currentBlock || currentBlock.type !== "dialog") {
+          if (currentBlock) blocks.push(currentBlock);
+          currentBlock = { type: "dialog", content: "", items: [] };
+        }
+        currentBlock.items!.push(line);
+        continue;
+      }
+      // Regular paragraph
+      if (currentBlock && currentBlock.type === "paragraph") {
+        currentBlock.content += " " + line;
+      } else {
+        if (currentBlock) blocks.push(currentBlock);
+        currentBlock = { type: "paragraph", content: line, items: [] };
+      }
+    }
+    if (currentBlock) blocks.push(currentBlock);
+    return blocks;
+  }, [content]);
+
+  const renderBold = (text: string) => {
+    // Parse **bold** text
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={i} className="font-semibold text-emerald-800">{part.slice(2, -2)}</strong>;
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      {parsed.map((block, i) => {
+        switch (block.type) {
+          case "header":
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03 }}
+                className="flex items-center gap-2 mt-5 first:mt-0"
+              >
+                <div className="h-6 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <h3 className="font-bold text-emerald-900 text-base">{renderBold(block.content)}</h3>
+              </motion.div>
+            );
+          case "list":
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -5 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.03 }}
+                className="bg-white rounded-xl border border-emerald-50 p-3 space-y-2"
+              >
+                {block.items!.map((item, j) => (
+                  <div key={j} className="flex items-start gap-2.5">
+                    <div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    </div>
+                    <p className="text-sm leading-relaxed text-gray-700">{renderBold(item)}</p>
+                  </div>
+                ))}
+              </motion.div>
+            );
+          case "example":
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.03 }}
+                className="relative bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-4 pl-10"
+              >
+                <MessageCircle className="absolute top-3.5 left-3 h-5 w-5 text-blue-400" />
+                <p className="text-[10px] font-semibold text-blue-500 uppercase tracking-wider mb-1">Ejemplo</p>
+                <p className="text-sm leading-relaxed text-blue-900">{renderBold(block.content)}</p>
+              </motion.div>
+            );
+          case "tip":
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.03 }}
+                className="relative bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200 p-4 pl-10"
+              >
+                <Lightbulb className="absolute top-3.5 left-3 h-5 w-5 text-amber-500" />
+                <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wider mb-1">Consejo</p>
+                <p className="text-sm leading-relaxed text-amber-900">{renderBold(block.content)}</p>
+              </motion.div>
+            );
+          case "dialog":
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -5 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.03 }}
+                className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl border border-violet-100 p-4 space-y-2.5"
+              >
+                <p className="text-[10px] font-semibold text-violet-500 uppercase tracking-wider flex items-center gap-1">
+                  <MessageCircle className="h-3 w-3" /> Conversacion
+                </p>
+                {block.items!.map((line, j) => {
+                  const match = line.match(/^([A-B]|(?:Person|Persona|Profesor|Estudiante)\s*\d?):\s*(.*)/i);
+                  if (!match) return <p key={j} className="text-sm text-gray-700">{renderBold(line)}</p>;
+                  const isPersonA = /^A:|Person\s*1:|Profesor:/i.test(match[1]);
+                  return (
+                    <div key={j} className={`flex gap-2 ${isPersonA ? "" : "pl-6"}`}>
+                      <div className={`h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${isPersonA ? "bg-violet-500 text-white" : "bg-white text-violet-600 border border-violet-200"}`}>
+                        {isPersonA ? "A" : "B"}
+                      </div>
+                      <p className="text-sm leading-relaxed text-gray-700 pt-1">{renderBold(match[2])}</p>
+                    </div>
+                  );
+                })}
+              </motion.div>
+            );
+          case "paragraph":
+          default:
+            return (
+              <motion.p
+                key={i}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: i * 0.02 }}
+                className="text-sm leading-relaxed text-gray-700"
+              >
+                {renderBold(block.content)}
+              </motion.p>
+            );
+        }
+      })}
+    </div>
   );
 }
 
@@ -1896,46 +2224,62 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-0">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-emerald-100 p-3">
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-emerald-100 px-4 pt-3 pb-2.5">
         <div className="flex items-center gap-3 mb-2">
-          <Button variant="ghost" size="icon" onClick={onBack} className="rounded-xl h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={onBack} className="rounded-xl h-8 w-8 shrink-0 hover:bg-emerald-50">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1 min-w-0">
             <h2 className="font-bold text-sm truncate text-emerald-900">{lesson.title}</h2>
-            <p className="text-[10px] text-muted-foreground">{lesson.description}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{lesson.description}</p>
           </div>
-          {currentProgress?.completed && <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0" />}
+          {currentProgress?.completed && (
+            <Badge className="bg-emerald-100 text-emerald-700 text-[10px] shrink-0 border-0">
+              <CheckCircle className="h-3 w-3 mr-1" /> Completada
+            </Badge>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Progress value={progressPercent} className="h-1.5 flex-1" />
-          <span className="text-[10px] text-muted-foreground font-medium">{progressPercent}%</span>
+          <span className="text-[10px] text-muted-foreground font-medium w-7 text-right">{progressPercent}%</span>
         </div>
       </div>
 
       {/* Content */}
-      <div id="lesson-content-area" className="p-4">
+      <div id="lesson-content-area" className="p-4 pb-24">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-5 mb-4">
-            <TabsTrigger value="contenido" className="text-xs">Contenido</TabsTrigger>
-            <TabsTrigger value="video" className="text-xs">Video</TabsTrigger>
-            <TabsTrigger value="documentos" className="text-xs">Docs</TabsTrigger>
-            <TabsTrigger value="ejercicios" className="text-xs">Ejercicios</TabsTrigger>
-            <TabsTrigger value="capturar" className="text-xs">Capturar</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-5 mb-4 h-11">
+            <TabsTrigger value="contenido" className="text-[11px] gap-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+              <BookOpen className="h-3.5 w-3.5" /> Contenido
+            </TabsTrigger>
+            <TabsTrigger value="video" className="text-[11px] gap-1">
+              <Play className="h-3.5 w-3.5" /> Video
+            </TabsTrigger>
+            <TabsTrigger value="documentos" className="text-[11px] gap-1">
+              <FileText className="h-3.5 w-3.5" /> Docs
+            </TabsTrigger>
+            <TabsTrigger value="ejercicios" className="text-[11px] gap-1">
+              <Sparkles className="h-3.5 w-3.5" /> Tests
+            </TabsTrigger>
+            <TabsTrigger value="capturar" className="text-[11px] gap-1">
+              <Camera className="h-3.5 w-3.5" /> Foto
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="contenido">
-            <Card className="rounded-xl">
-              <CardContent className="p-4">
-                {lesson.content ? (
-                  <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed">
-                    {lesson.content}
+            {lesson.content ? (
+              <LessonContentRenderer content={lesson.content} />
+            ) : (
+              <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+                <CardContent className="py-10 text-center">
+                  <div className="h-14 w-14 mx-auto bg-emerald-50 rounded-2xl flex items-center justify-center mb-3">
+                    <BookOpen className="h-7 w-7 text-emerald-300" />
                   </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-4">No hay contenido disponible</p>
-                )}
-              </CardContent>
-            </Card>
+                  <p className="text-muted-foreground font-medium">Contenido en preparacion</p>
+                  <p className="text-xs text-muted-foreground mt-1">Tu profesor lo publicara pronto</p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="video">
