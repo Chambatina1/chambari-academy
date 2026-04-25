@@ -8,6 +8,15 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    // Students can see their own access grants
+    if (user.role === 'STUDENT') {
+      const grants = await db.studentAccess.findMany({
+        where: { studentId: user.id },
+        select: { id: true, studentId: true, lessonId: true, active: true },
+      })
+      return NextResponse.json(grants)
+    }
+
     if (user.role !== 'TEACHER') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
