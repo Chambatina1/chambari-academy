@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============ AUTH & USERS ============
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("STUDENT") // TEACHER | STUDENT
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  modules       Module[]          @relation("TeacherModules")
+  lessons       Lesson[]          @relation("TeacherLessons")
+  accessGrants  StudentAccess[]
+  progress      Progress[]
+  sentMessages  Message[]        @relation("SentMessages")
+  receivedMessages Message[]     @relation("ReceivedMessages")
+  screenshots   Screenshot[]
+}
+
+// ============ COURSE CONTENT ============
+
+model Module {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  orderIndex  Int      @default(0)
+  teacherId   String
+  status      String   @default("DRAFT") // DRAFT | PUBLISHED | ARCHIVED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teacher User     @relation("TeacherModules", fields: [teacherId], references: [id])
+  lessons Lesson[]
+}
+
+model Lesson {
+  id            String   @id @default(cuid())
+  moduleId      String
+  teacherId     String
+  title         String
+  description   String?
+  content       String?
+  videoUrl      String?
+  youtubeUrl    String?
+  documentUrl   String?
+  documentName  String?
+  meetingUrl    String?
+  meetingRoom   String?
+  orderIndex    Int      @default(0)
+  status        String   @default("DRAFT") // DRAFT | PUBLISHED | ARCHIVED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  teacher      User       @relation("TeacherLessons", fields: [teacherId], references: [id])
+  module       Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  exercises    Exercise[]
+  accessGrants StudentAccess[]
+  progress     Progress[]
+  messages     Message[]
+  screenshots  Screenshot[]
+}
+
+// ============ ACCESS CONTROL ============
+
+model StudentAccess {
+  id         String    @id @default(cuid())
+  studentId  String
+  lessonId   String
+  accessFrom DateTime?
+  accessUntil DateTime?
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lesson  Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, lessonId])
+}
+
+// ============ PROGRESS TRACKING ============
+
+model Progress {
+  id              String   @id @default(cuid())
+  studentId       String
+  lessonId        String
+  completed       Boolean  @default(false)
+  progressPercent Int      @default(0)
+  updatedAt       DateTime @updatedAt
+
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lesson  Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, lessonId])
+}
+
+// ============ EXERCISES (DeepSeek Generated) ============
+
+model Exercise {
+  id            String   @id @default(cuid())
+  lessonId      String
+  type          String   @default("multiple_choice")
+  question      String
+  options       String?
+  correctAnswer String
+  explanation   String?
+  orderIndex    Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+}
+
+// ============ MESSAGING ============
+
+model Message {
+  id         String    @id @default(cuid())
+  senderId   String
+  receiverId String?
+  lessonId   String?
+  body       String
+  senderRole String
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  sender   User    @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User?   @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: SetNull)
+  lesson   Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+}
+
+// ============ SCREENSHOTS ============
+
+model Screenshot {
+  id        String   @id @default(cuid())
+  studentId String
+  lessonId  String
+  imageUrl  String
+  caption   String?
+  createdAt DateTime @default(now())
+
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lesson  Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+}
+
+// ============ PHONETIC DICTIONARY ============
+
+model PhoneticEntry {
+  id               String   @id @default(cuid())
+  word             String
+  ipa              String
+  phoneticSpelling String?
+  audioUrl         String?
+  example          String?
+  translation      String?
+  createdAt        DateTime @default(now())
+
+  @@unique([word])
+}

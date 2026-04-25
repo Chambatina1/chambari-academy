@@ -1,0 +1,73 @@
+# dependencies
+node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+dev.log
+server.log
+
+# env files
+.env
+.env.local
+.env.production
+.env.staging
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+local-*
+
+# Database
+db/*.db
+db/*.db-journal
+
+# Sandbox internal files
+.claude
+.z-ai-config
+.zscripts
+prompt
+test
+server.log
+/skills/
+Caddyfile
+
+# Reference project (original)
+chambari-academy-reference/
+
+# Sandbox examples
+examples/
+
+# Uploaded files (handle via storage in production)
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Mini-services lock files (regenerated on install)
+mini-services/*/node_modules/
