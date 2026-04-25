@@ -4,13 +4,9 @@
    CHAMBARI ACADEMY — Complete Single-Page Application
    ============================================================ */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-
-// socket.io types only — actual import is dynamic to prevent SSR/hydration issues
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Socket = any;
 
 // ── shadcn/ui Components ──────────────────────────────────────
 import { Button } from "@/components/ui/button";
@@ -41,11 +37,11 @@ import {
 // ── Lucide Icons ──────────────────────────────────────────────
 import {
   GraduationCap, BookOpen, Users, Sparkles, BarChart3, Camera,
-  MessageCircle, Video, Book, Home, Plus, Trash2, Edit, LogOut,
-  Menu, Search, Send, X, ChevronLeft, ChevronRight, ChevronDown,
+  Video, Book, Home, Plus, Trash2, Edit, LogOut,
+  Menu, Search, X, ChevronLeft, ChevronRight, ChevronDown,
   Upload, CheckCircle, Circle, Play, Eye, Download, RefreshCw,
   Globe, Mic, Volume2, FileText, PenTool, ArrowLeft, Loader2,
-  Phone, Monitor, Star, Award, Clock, Target, Zap, Shield,
+  Star, Award, Clock, Target, Zap, Shield,
   Brain, Heart, Lightbulb, Library, Settings
 } from "lucide-react";
 
@@ -80,8 +76,6 @@ interface Lesson {
   youtubeUrl?: string;
   documentUrl?: string;
   documentName?: string;
-  meetingUrl?: string;
-  meetingRoom?: string;
   orderIndex: number;
   status: string;
   exercises?: Exercise[];
@@ -118,19 +112,6 @@ interface StudentProgress {
   progressPercent: number;
   lesson?: Lesson;
   student?: User;
-}
-
-interface Message {
-  id: string;
-  senderId: string;
-  receiverId?: string;
-  lessonId?: string;
-  body: string;
-  senderRole: string;
-  readAt?: string;
-  createdAt: string;
-  sender?: User;
-  receiver?: User;
 }
 
 interface Screenshot {
@@ -182,8 +163,8 @@ function apiUpload(path: string, formData: FormData): Promise<{ url: string }> {
 
 // ── View Type ─────────────────────────────────────────────────
 type View = "landing" | "login" | "register" | "teacher" | "student";
-type TeacherView = "dashboard" | "modules" | "lesson-editor" | "students" | "exercises" | "progress" | "screenshots" | "chat" | "classroom" | "dictionary";
-type StudentView = "dashboard" | "lesson" | "exercises" | "dictionary" | "chat" | "classroom" | "capture";
+type TeacherView = "dashboard" | "modules" | "lesson-editor" | "students" | "exercises" | "progress" | "screenshots" | "dictionary";
+type StudentView = "dashboard" | "lesson" | "exercises" | "dictionary" | "progress";
 
 // ── Page Component ────────────────────────────────────────────
 export default function ChambariAcademy() {
@@ -202,26 +183,10 @@ export default function ChambariAcademy() {
   const [students, setStudents] = useState<User[]>([]);
   const [allAccessGrants, setAllAccessGrants] = useState<StudentAccess[]>([]);
   const [progressData, setProgressData] = useState<StudentProgress[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
   const [phoneticEntries, setPhoneticEntries] = useState<PhoneticEntry[]>([]);
   const [currentExercises, setCurrentExercises] = useState<Exercise[]>([]);
-  const [activeClassroom, setActiveClassroom] = useState<string | null>(null);
   const [studentAnswers, setStudentAnswers] = useState<Record<string, string>>({});
-
-  // ── Refs for socket ────────────────────────────────────────
-  const socketRef = useRef<Socket | null>(null);
-  const socketConnectedRef = useRef(false);
-  const viewRef = useRef(view);
-  const teacherViewRef = useRef(teacherView);
-  const studentViewRef = useRef(studentView);
-
-  // Keep refs in sync (must be in useEffect per React 19 rules)
-  useEffect(() => {
-    viewRef.current = view;
-    teacherViewRef.current = teacherView;
-    studentViewRef.current = studentView;
-  });
 
   // ── Initialize / Auth ─────────────────────────────────────
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -268,24 +233,6 @@ export default function ChambariAcademy() {
     } catch { toast.error("Error al cargar progreso"); }
   }, [user]);
 
-  const fetchMessages = useCallback(async () => {
-    if (!user) return;
-    try {
-      const otherId = messages.length > 0 ? (messages[0].senderId === user.id ? messages[0].receiverId : messages[0].senderId) : undefined;
-      const params = otherId ? `?senderId=${user.id}&receiverId=${otherId}` : "";
-      const data = await api<Message[]>(`/api/messages${params}`);
-      setMessages(data);
-    } catch { /* silent */ }
-  }, [user, messages]);
-
-  const fetchMessagesWith = useCallback(async (otherId: string) => {
-    if (!user) return;
-    try {
-      const data = await api<Message[]>(`/api/messages?senderId=${user.id}&receiverId=${otherId}`);
-      setMessages(data);
-    } catch { /* silent */ }
-  }, [user]);
-
   const fetchScreenshots = useCallback(async () => {
     if (!user) return;
     try {
@@ -309,63 +256,6 @@ export default function ChambariAcademy() {
       setCurrentExercises(data);
     } catch { setCurrentExercises([]); }
   }, []);
-
-  // ── WebSocket (dynamic import to prevent hydration issues) ──
-  useEffect(() => {
-    if (!user || socketConnectedRef.current) return;
-    let socket: Socket | null = null;
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const { io } = await import("socket.io-client");
-        if (cancelled) return;
-        socket = io("/?XTransformPort=3003", { transports: ["websocket", "polling"], reconnectionAttempts: 3, timeout: 5000 });
-        socketRef.current = socket;
-        socketConnectedRef.current = true;
-        socket.on("connect", () => {
-          socket!.emit("auth", { userId: user.id, role: user.role, name: user.name });
-        });
-        socket.on("progress:updated", () => {
-          toast.info("Progreso actualizado");
-          if (viewRef.current === "teacher" && teacherViewRef.current === "progress") fetchProgress();
-        });
-        socket.on("screenshot:received", () => {
-          toast.info("Nueva captura recibida");
-          if (viewRef.current === "teacher" && teacherViewRef.current === "screenshots") fetchScreenshots();
-        });
-        socket.on("message:notification", () => {
-          toast.info("Nuevo mensaje recibido");
-          if (viewRef.current === "teacher" && teacherViewRef.current === "chat") fetchMessages();
-          if (viewRef.current === "student" && studentViewRef.current === "chat") fetchMessages();
-        });
-        socket.on("class:started", (data: { room: string }) => {
-          toast.info(`Aula virtual iniciada: ${data.room}`);
-          setActiveClassroom(data.room);
-        });
-        socket.on("class:ended", () => {
-          toast.info("Aula virtual finalizada");
-          setActiveClassroom(null);
-        });
-        socket.on("student:online", (data: { name: string }) => {
-          toast.success(`${data.name} se ha conectado`);
-        });
-        socket.on("student:offline", (data: { name: string }) => {
-          toast.info(`${data.name} se ha desconectado`);
-        });
-        socket.on("connect_error", () => {
-          // Silent fail — WebSocket is optional
-        });
-      } catch {
-        // socket.io not available — continue without real-time features
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      if (socket) socket.disconnect();
-    };
-  }, [user, fetchProgress, fetchScreenshots, fetchMessages]);
 
   // Load data based on view
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -424,7 +314,6 @@ export default function ChambariAcademy() {
     setStudentView("dashboard");
     setSelectedModule(null);
     setSelectedLesson(null);
-    if (socketRef.current) socketRef.current.disconnect();
     toast.success("Sesión cerrada");
   };
 
@@ -501,7 +390,7 @@ export default function ChambariAcademy() {
               Aprende inglés con el método Sinapsis
             </p>
             <p className="text-base text-emerald-600/60 mb-10 max-w-lg mx-auto">
-              Clases en vivo, ejercicios interactivos, diccionario fonético y seguimiento personalizado para cada estudiante.
+              50 clases estructuradas, ejercicios interactivos, diccionario fonético y seguimiento personalizado.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -517,7 +406,7 @@ export default function ChambariAcademy() {
           {/* Feature cards */}
           <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.3 }} className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-16 max-w-3xl w-full">
             {[
-              { icon: Video, title: "Aula Virtual", desc: "Clases en vivo con Jitsi Meet" },
+              { icon: Target, title: "Diagnóstico", desc: "Evaluación inicial personalizada" },
               { icon: Brain, title: "Ejercicios AI", desc: "Generados automáticamente por IA" },
               { icon: BookOpen, title: "Diccionario Fonético", desc: "Aprende la pronunciación correcta" },
             ].map((f) => (
@@ -632,8 +521,6 @@ export default function ChambariAcademy() {
               {teacherView === "exercises" && <TeacherExercises key="exercises" modules={modules} />}
               {teacherView === "progress" && <TeacherProgress key="progress" students={students} progressData={progressData} onRefresh={fetchProgress} />}
               {teacherView === "screenshots" && <TeacherScreenshots key="screenshots" screenshots={screenshots} onRefresh={fetchScreenshots} />}
-              {teacherView === "chat" && <TeacherChat key="tchat" user={user} students={students} messages={messages} onSendMessage={async (receiverId, body) => { try { await api("/api/messages", { method: "POST", body: JSON.stringify({ receiverId, body }) }); fetchMessagesWith(receiverId); if (socketRef.current) socketRef.current.emit("message:sent", { receiverId }); toast.success("Mensaje enviado"); } catch { toast.error("Error al enviar"); } }} onFetchMessages={fetchMessagesWith} />}
-              {teacherView === "classroom" && <TeacherClassroom key="tclassroom" modules={modules} activeClassroom={activeClassroom} onStartClass={(room) => { setActiveClassroom(room); if (socketRef.current) socketRef.current.emit("class:started", { room }); }} onEndClass={() => { setActiveClassroom(null); if (socketRef.current) socketRef.current.emit("class:ended", {}); }} />}
               {teacherView === "dictionary" && <PhoneticDictionary key="tdict" entries={phoneticEntries} onRefresh={() => fetchPhonetic()} onSearch={fetchPhonetic} />}
             </AnimatePresence>
           </main>
@@ -668,10 +555,8 @@ export default function ChambariAcademy() {
         <main className="flex-1 overflow-auto">
           <AnimatePresence mode="wait">
             {studentView === "dashboard" && <StudentDashboard key="sdash" user={user} modules={modules} progressData={progressData} accessGrants={allAccessGrants} onRefresh={() => { fetchModules(); fetchProgress(); fetchAccessGrants(); }} onSelectLesson={(l) => { setSelectedLesson(l); setStudentView("lesson"); setStudentAnswers({}); fetchExercises(l.id); }} />}
-            {studentView === "lesson" && selectedLesson && <StudentLesson key="slesson" user={user} lesson={selectedLesson} exercises={currentExercises} progressData={progressData} studentAnswers={studentAnswers} onAnswerChange={setStudentAnswers} onBack={() => setStudentView("dashboard")} onSubmitProgress={async (lessonId, pct, completed) => { try { await api("/api/progress", { method: "POST", body: JSON.stringify({ lessonId, progressPercent: pct, completed }) }); if (socketRef.current) socketRef.current.emit("progress:updated", { studentId: user.id, lessonId, progressPercent: pct }); toast.success("Progreso guardado"); fetchProgress(); } catch { toast.error("Error al guardar"); } }} onCapture={captureScreenshot} onRefreshExercises={() => fetchExercises(selectedLesson.id)} />}
+            {studentView === "lesson" && selectedLesson && <StudentLesson key="slesson" user={user} lesson={selectedLesson} exercises={currentExercises} progressData={progressData} studentAnswers={studentAnswers} onAnswerChange={setStudentAnswers} onBack={() => setStudentView("dashboard")} onSubmitProgress={async (lessonId, pct, completed) => { try { await api("/api/progress", { method: "POST", body: JSON.stringify({ lessonId, progressPercent: pct, completed }) }); toast.success("Progreso guardado"); fetchProgress(); } catch { toast.error("Error al guardar"); } }} onCapture={captureScreenshot} onRefreshExercises={() => fetchExercises(selectedLesson.id)} />}
             {studentView === "dictionary" && <PhoneticDictionary key="sdict" entries={phoneticEntries} onRefresh={() => fetchPhonetic()} onSearch={fetchPhonetic} />}
-            {studentView === "chat" && <StudentChat key="schat" user={user} messages={messages} onSendMessage={async (receiverId, body) => { try { await api("/api/messages", { method: "POST", body: JSON.stringify({ receiverId, body }) }); fetchMessagesWith(receiverId); if (socketRef.current) socketRef.current.emit("message:sent", { receiverId }); } catch { toast.error("Error"); } }} onFetchMessages={fetchMessagesWith} />}
-            {studentView === "classroom" && <StudentClassroom key="sclass" activeClassroom={activeClassroom} />}
           </AnimatePresence>
         </main>
 
@@ -680,8 +565,7 @@ export default function ChambariAcademy() {
           {[
             { icon: BookOpen, label: "Clases", view: "dashboard" as StudentView },
             { icon: Book, label: "Diccionario", view: "dictionary" as StudentView },
-            { icon: MessageCircle, label: "Chat", view: "chat" as StudentView },
-            { icon: Video, label: "Aula", view: "classroom" as StudentView },
+            { icon: BarChart3, label: "Progreso", view: "progress" as StudentView },
           ].map((item) => (
             <button key={item.view} onClick={() => setStudentView(item.view)} className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors ${studentView === item.view ? "text-emerald-600" : "text-muted-foreground hover:text-emerald-500"}`}>
               <item.icon className="h-5 w-5" />
@@ -842,8 +726,6 @@ function TeacherSidebarNav({ currentView, onNavigate }: { currentView: TeacherVi
     { view: "exercises", icon: Sparkles, label: "Ejercicios AI" },
     { view: "progress", icon: BarChart3, label: "Progreso" },
     { view: "screenshots", icon: Camera, label: "Capturas" },
-    { view: "chat", icon: MessageCircle, label: "Chat" },
-    { view: "classroom", icon: Video, label: "Aula Virtual" },
     { view: "dictionary", icon: Book, label: "Diccionario Fonético" },
   ];
 
@@ -1150,7 +1032,6 @@ function TeacherLessonEditor({ module, lesson, students, onSave, onBack }: { mod
   const [content, setContent] = useState(lesson?.content || "");
   const [youtubeUrl, setYoutubeUrl] = useState(lesson?.youtubeUrl || "");
   const [videoUrl, setVideoUrl] = useState(lesson?.videoUrl || "");
-  const [meetingUrl, setMeetingUrl] = useState(lesson?.meetingUrl || "");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [documentUrl, setDocumentUrl] = useState(lesson?.documentUrl || "");
   const [documentName, setDocumentName] = useState(lesson?.documentName || "");
@@ -1176,7 +1057,7 @@ function TeacherLessonEditor({ module, lesson, students, onSave, onBack }: { mod
         docName = documentFile.name;
       }
       const body: Record<string, any> = {
-        title, description, content, youtubeUrl, videoUrl, meetingUrl,
+        title, description, content, youtubeUrl, videoUrl,
         documentUrl: docUrl, documentName: docName,
       };
       if (!lesson && module) {
@@ -1278,10 +1159,7 @@ function TeacherLessonEditor({ module, lesson, students, onSave, onBack }: { mod
                 </div>
                 {documentUrl && <a href={documentUrl} target="_blank" className="text-sm text-emerald-600 hover:underline flex items-center gap-1"><FileText className="h-3 w-3" /> Ver documento actual</a>}
               </div>
-              <div className="space-y-2">
-                <Label>URL de Reunión</Label>
-                <Input value={meetingUrl} onChange={(e) => setMeetingUrl(e.target.value)} placeholder="https://meet.jit.si/..." className="rounded-xl" />
-              </div>
+
             </CardContent>
           </Card>
         </TabsContent>
@@ -1741,188 +1619,6 @@ function TeacherScreenshots({ screenshots, onRefresh }: { screenshots: Screensho
 }
 
 // ════════════════════════════════════════════════════════════════
-//  TEACHER CHAT
-// ════════════════════════════════════════════════════════════════
-function TeacherChat({ user, students, messages, onSendMessage, onFetchMessages }: { user: User; students: User[]; messages: Message[]; onSendMessage: (receiverId: string, body: string) => void; onFetchMessages: (id: string) => void }) {
-  const [activeStudent, setActiveStudent] = useState<User | null>(null);
-  const [messageText, setMessageText] = useState("");
-
-  const sendMessage = () => {
-    if (!messageText.trim() || !activeStudent) return;
-    onSendMessage(activeStudent.id, messageText.trim());
-    setMessageText("");
-  };
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 max-w-5xl mx-auto h-[calc(100vh-10rem)]">
-      <div>
-        <h1 className="text-2xl font-bold text-emerald-900">Chat</h1>
-        <p className="text-muted-foreground">Mensajes con estudiantes</p>
-      </div>
-
-      <Card className="rounded-xl flex-1 overflow-hidden flex" style={{ height: "calc(100vh - 14rem)" }}>
-        {/* Student list */}
-        <div className="w-64 border-r border-emerald-100 hidden md:block">
-          <div className="p-3 border-b border-emerald-100">
-            <p className="text-sm font-semibold text-muted-foreground">Estudiantes</p>
-          </div>
-          <ScrollArea className="h-[calc(100%-48px)]">
-            <div>
-              {students.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => { setActiveStudent(s); onFetchMessages(s.id); }}
-                  className={`w-full p-3 text-left flex items-center gap-3 hover:bg-emerald-50 transition-colors ${activeStudent?.id === s.id ? "bg-emerald-50" : ""}`}
-                >
-                  <Avatar className="h-8 w-8 bg-emerald-100">
-                    <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs">{s.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-medium truncate">{s.name}</span>
-                </button>
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
-
-        {/* Mobile student selector */}
-        {!activeStudent && (
-          <div className="flex-1 p-4 md:hidden">
-            <p className="text-sm font-semibold text-muted-foreground mb-3">Selecciona un estudiante</p>
-            <div className="space-y-2">
-              {students.map((s) => (
-                <button key={s.id} onClick={() => { setActiveStudent(s); onFetchMessages(s.id); }} className="w-full p-3 rounded-xl border border-emerald-100 flex items-center gap-3 hover:bg-emerald-50">
-                  <Avatar className="h-8 w-8 bg-emerald-100">
-                    <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs">{s.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-medium">{s.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Chat area */}
-        {activeStudent && (
-          <div className="flex-1 flex flex-col">
-            <div className="p-3 border-b border-emerald-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden" onClick={() => setActiveStudent(null)}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <Avatar className="h-8 w-8 bg-emerald-100">
-                  <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs">{activeStudent.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <span className="font-semibold text-sm">{activeStudent.name}</span>
-              </div>
-            </div>
-            <ScrollArea className="flex-1 p-4" ref={(el) => { if (el) { setTimeout(() => { el.querySelector("[data-radix-scroll-area-viewport]")?.scrollTo({ top: 99999 }); }, 100); } }}>
-              <div className="space-y-3">
-                {messages.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">No hay mensajes. ¡Escribe el primero!</p>}
-                {messages.map((msg) => {
-                  const isMine = msg.senderId === user.id;
-                  return (
-                    <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[75%] p-3 rounded-xl ${isMine ? "bg-emerald-600 text-white" : "bg-emerald-50 text-emerald-900"}`}>
-                        <p className="text-sm">{msg.body}</p>
-                        <p className={`text-[10px] mt-1 ${isMine ? "text-emerald-200" : "text-emerald-500"}`}>
-                          {new Date(msg.createdAt).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-            <div className="p-3 border-t border-emerald-100 flex items-center gap-2">
-              <Input value={messageText} onChange={(e) => setMessageText(e.target.value)} placeholder="Escribe un mensaje..." className="rounded-xl" onKeyDown={(e) => e.key === "Enter" && sendMessage()} />
-              <Button onClick={sendMessage} size="icon" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-10 w-10">
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-      </Card>
-    </motion.div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════
-//  TEACHER VIRTUAL CLASSROOM
-// ════════════════════════════════════════════════════════════════
-function TeacherClassroom({ modules, activeClassroom, onStartClass, onEndClass }: { modules: Module[]; activeClassroom: string | null; onStartClass: (room: string) => void; onEndClass: () => void }) {
-  const [allLessons, setAllLessons] = useState<Lesson[]>([]);
-  const [selectedLesson, setSelectedLesson] = useState("");
-  const [roomName, setRoomName] = useState("");
-
-  useEffect(() => {
-    const loadLessons = async () => {
-      const all: Lesson[] = [];
-      for (const mod of modules) {
-        const data = await api<Lesson[]>(`/api/lessons?moduleId=${mod.id}`);
-        all.push(...data);
-      }
-      setAllLessons(all);
-    };
-    loadLessons();
-  }, [modules]);
-
-  const startClass = () => {
-    const room = roomName.trim() || `chambari-${Date.now()}`;
-    setRoomName(room);
-    onStartClass(room);
-  };
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6 max-w-5xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-emerald-900">Aula Virtual</h1>
-        <p className="text-muted-foreground">Clases en vivo con Jitsi Meet</p>
-      </div>
-
-      <Card className="rounded-xl">
-        <CardContent className="p-4 space-y-4">
-          <div className="space-y-2">
-            <Label>Lección Asociada</Label>
-            <Select value={selectedLesson} onValueChange={setSelectedLesson}>
-              <SelectTrigger className="rounded-xl"><SelectValue placeholder="Elige una lección..." /></SelectTrigger>
-              <SelectContent>
-                {allLessons.map((l) => <SelectItem key={l.id} value={l.id}>{l.title}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Nombre del Aula (opcional)</Label>
-            <Input value={roomName} onChange={(e) => setRoomName(e.target.value)} placeholder="chambari-mi-clase" className="rounded-xl" />
-          </div>
-
-          {!activeClassroom ? (
-            <Button onClick={startClass} className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-11">
-              <Video className="h-4 w-4 mr-2" /> Iniciar Clase
-            </Button>
-          ) : (
-            <Button onClick={onEndClass} className="w-full rounded-xl bg-destructive hover:bg-destructive/90 text-white h-11">
-              <X className="h-4 w-4 mr-2" /> Finalizar Clase
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
-      {activeClassroom && (
-        <Card className="rounded-xl overflow-hidden">
-          <div className="jitsi-container" style={{ height: "500px" }}>
-            <iframe
-              src={`https://meet.jit.si/${activeClassroom}`}
-              allow="camera; microphone; fullscreen; display-capture; autoplay"
-              style={{ width: "100%", height: "100%", border: "none" }}
-            />
-          </div>
-        </Card>
-      )}
-    </motion.div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════
 //  PHONETIC DICTIONARY (shared teacher + student)
 // ════════════════════════════════════════════════════════════════
 function PhoneticDictionary({ entries, onRefresh, onSearch }: { entries: PhoneticEntry[]; onRefresh: () => void; onSearch: (q?: string) => void }) {
@@ -2188,12 +1884,7 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
           caption: caption || undefined,
         }),
       });
-      
-      // Notify via socket
-      const { io: socketIo } = await import("socket.io-client");
-      const socket = socketIo("/?XTransformPort=3003");
-      socket.emit("screenshot:sent", { studentId: user.id, lessonId: lesson.id });
-      
+
       toast.success("Captura enviada al profesor");
       setCaption("");
     } catch {
@@ -2419,112 +2110,6 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
           </TabsContent>
         </Tabs>
       </div>
-    </motion.div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════
-//  STUDENT CHAT
-// ════════════════════════════════════════════════════════════════
-function StudentChat({ user, messages, onSendMessage, onFetchMessages }: { user: User; messages: Message[]; onSendMessage: (receiverId: string, body: string) => void; onFetchMessages: (id: string) => void }) {
-  const [teachers, setTeachers] = useState<User[]>([]);
-  const [messageText, setMessageText] = useState("");
-
-  // Derive active teacher from messages
-  const activeTeacher = messages.length > 0 ? messages.find((m) => m.senderId !== user.id)?.sender : null;
-
-  // When a student chats, they talk to their teacher (first teacher found)
-  const startChat = async () => {
-    if (activeTeacher) return;
-    try {
-      // Get teacher info from existing messages or just use a generic "teacher" id
-      // We'll emit a message to any teacher
-      const me = await api<User>("/api/auth/me");
-      if (me) {
-        // For student, just allow typing and send - teacherId will be resolved server-side
-      }
-    } catch { /* silent */ }
-  };
-
-  const sendMessage = () => {
-    if (!messageText.trim()) return;
-    // Student sends to teacher - use empty receiverId (server will handle)
-    onSendMessage("", messageText.trim());
-    setMessageText("");
-  };
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col" style={{ height: "calc(100vh - 8rem)" }}>
-      <div className="p-4 border-b border-emerald-100">
-        <h1 className="text-xl font-bold text-emerald-900">Chat con Profesor</h1>
-      </div>
-
-      <div className="flex-1 flex flex-col">
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-3">
-            {messages.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <MessageCircle className="h-10 w-10 mx-auto mb-2 text-emerald-300" />
-                <p>No hay mensajes todavía</p>
-                <p className="text-xs mt-1">Escribe un mensaje para tu profesor</p>
-              </div>
-            )}
-            {messages.map((msg) => {
-              const isMine = msg.senderId === user.id;
-              return (
-                <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[80%] p-3 rounded-xl ${isMine ? "bg-emerald-600 text-white" : "bg-emerald-50 text-emerald-900"}`}>
-                    <p className="text-sm">{msg.body}</p>
-                    <p className={`text-[10px] mt-1 ${isMine ? "text-emerald-200" : "text-emerald-500"}`}>
-                      {new Date(msg.createdAt).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </ScrollArea>
-        <div className="p-3 border-t border-emerald-100 flex items-center gap-2">
-          <Input value={messageText} onChange={(e) => setMessageText(e.target.value)} placeholder="Escribe un mensaje..." className="rounded-xl" onKeyDown={(e) => e.key === "Enter" && sendMessage()} />
-          <Button onClick={sendMessage} size="icon" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-10 w-10">
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════
-//  STUDENT VIRTUAL CLASSROOM
-// ════════════════════════════════════════════════════════════════
-function StudentClassroom({ activeClassroom }: { activeClassroom: string | null }) {
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-4 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-emerald-900">Aula Virtual</h1>
-        <p className="text-muted-foreground">Clases en vivo con tu profesor</p>
-      </div>
-
-      {!activeClassroom ? (
-        <Card className="rounded-xl">
-          <CardContent className="py-12 text-center">
-            <Video className="h-12 w-12 mx-auto text-emerald-300 mb-3" />
-            <p className="text-muted-foreground">No hay clases activas</p>
-            <p className="text-xs text-muted-foreground mt-1">Espera a que tu profesor inicie una clase</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="rounded-xl overflow-hidden">
-          <div className="jitsi-container" style={{ height: "calc(100vh - 12rem)" }}>
-            <iframe
-              src={`https://meet.jit.si/${activeClassroom}`}
-              allow="camera; microphone; fullscreen; display-capture; autoplay"
-              style={{ width: "100%", height: "100%", border: "none" }}
-            />
-          </div>
-        </Card>
-      )}
     </motion.div>
   );
 }
