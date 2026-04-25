@@ -684,7 +684,7 @@ function LoginPage({ onLogin, onGoRegister, onGoBack }: { onLogin: (e: string, p
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) { toast.error("Completa todos los campos"); return; }
+    if (!email || (!password && !isTeacher)) { toast.error("Completa todos los campos"); return; }
     setSubmitting(true);
     await onLogin(email, password, isTeacher);
     setSubmitting(false);
@@ -708,8 +708,8 @@ function LoginPage({ onLogin, onGoRegister, onGoBack }: { onLogin: (e: string, p
                 <Input type="email" placeholder="tu@correo.com" value={email} onChange={(e) => setEmail(e.target.value)} className="rounded-xl" />
               </div>
               <div className="space-y-2">
-                <Label>Contraseña</Label>
-                <Input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="rounded-xl" />
+                <Label>{isTeacher ? "Contraseña (opcional para profesores)" : "Contraseña"}</Label>
+                <Input type="password" placeholder={isTeacher ? "Dejar vacío para entrar sin contraseña" : "••••••••"} value={password} onChange={(e) => setPassword(e.target.value)} className="rounded-xl" />
               </div>
               <div className="flex items-center gap-2">
                 <Checkbox id="teacher" checked={isTeacher} onCheckedChange={(v) => setIsTeacher(!!v)} />
