@@ -6,9 +6,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  turbopack: {
-    root: "/home/z/my-project/chambari-academy",
-  },
 };
 
 export default nextConfig;
