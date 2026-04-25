@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: chambari-academy-v2
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npx next start -p 10000
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: postgresql://chamabri_user:hlCWi8Pcztf71bGcbqdtNVPqUxsDxB2K@dpg-d78hkpqdbo4c7385inhg-a.oregon-postgres.render.com:5432/chamabri
+      - key: NEXTAUTH_URL
+        value: https://chambari-academy-v2.onrender.com
+      - key: NEXTAUTH_SECRET
+        value: chambari-academy-secret-2024-production
