@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { moduleId, title, description, content, videoUrl, youtubeUrl, documentUrl, documentName, meetingUrl, meetingRoom, orderIndex, status } = body
+    const { moduleId, title, description, content, videoUrl, youtubeUrl, documentUrl, documentName, orderIndex, status } = body
 
     if (!moduleId || !title) {
       return NextResponse.json({ error: 'moduleId and title are required' }, { status: 400 })
@@ -85,8 +85,6 @@ export async function POST(request: NextRequest) {
         youtubeUrl: youtubeUrl || null,
         documentUrl: documentUrl || null,
         documentName: documentName || null,
-        meetingUrl: meetingUrl || null,
-        meetingRoom: meetingRoom || null,
         orderIndex: orderIndex || 0,
         status: status || 'DRAFT',
       },

@@ -17,7 +17,7 @@ export async function PUT(
 
     const { id } = await params
     const body = await request.json()
-    const { title, description, content, videoUrl, youtubeUrl, documentUrl, documentName, meetingUrl, meetingRoom, orderIndex, status } = body
+    const { title, description, content, videoUrl, youtubeUrl, documentUrl, documentName, orderIndex, status } = body
 
     const lesson = await db.lesson.update({
       where: { id },
@@ -29,8 +29,6 @@ export async function PUT(
         ...(youtubeUrl !== undefined && { youtubeUrl }),
         ...(documentUrl !== undefined && { documentUrl }),
         ...(documentName !== undefined && { documentName }),
-        ...(meetingUrl !== undefined && { meetingUrl }),
-        ...(meetingRoom !== undefined && { meetingRoom }),
         ...(orderIndex !== undefined && { orderIndex }),
         ...(status !== undefined && { status }),
       },
