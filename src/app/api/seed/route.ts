@@ -28,6 +28,10 @@ const PHONETIC_ENTRIES = [
   { word: 'world', ipa: '/wɜːrld/', phoneticSpelling: 'WURLD', example: 'English is spoken around the world.', translation: 'mundo' },
 ]
 
+export async function GET() {
+  return POST()
+}
+
 export async function POST() {
   try {
     // Create default teacher

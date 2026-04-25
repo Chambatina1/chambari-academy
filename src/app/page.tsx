@@ -5,9 +5,12 @@
    ============================================================ */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { io, Socket } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+
+// socket.io types only — actual import is dynamic to prevent SSR/hydration issues
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Socket = any;
 
 // ── shadcn/ui Components ──────────────────────────────────────
 import { Button } from "@/components/ui/button";
@@ -208,6 +211,7 @@ export default function ChambariAcademy() {
 
   // ── Refs for socket ────────────────────────────────────────
   const socketRef = useRef<Socket | null>(null);
+  const socketConnectedRef = useRef(false);
   const viewRef = useRef(view);
   const teacherViewRef = useRef(teacherView);
   const studentViewRef = useRef(studentView);
@@ -306,42 +310,61 @@ export default function ChambariAcademy() {
     } catch { setCurrentExercises([]); }
   }, []);
 
-  // ── WebSocket ─────────────────────────────────────────────
+  // ── WebSocket (dynamic import to prevent hydration issues) ──
   useEffect(() => {
-    if (!user) return;
-    const socket = io("/?XTransformPort=3003");
-    socketRef.current = socket;
-    socket.on("connect", () => {
-      socket.emit("auth", { userId: user.id, role: user.role, name: user.name });
-    });
-    socket.on("progress:updated", () => {
-      toast.info("Progreso actualizado");
-      if (viewRef.current === "teacher" && teacherViewRef.current === "progress") fetchProgress();
-    });
-    socket.on("screenshot:received", () => {
-      toast.info("Nueva captura recibida");
-      if (viewRef.current === "teacher" && teacherViewRef.current === "screenshots") fetchScreenshots();
-    });
-    socket.on("message:notification", () => {
-      toast.info("Nuevo mensaje recibido");
-      if (viewRef.current === "teacher" && teacherViewRef.current === "chat") fetchMessages();
-      if (viewRef.current === "student" && studentViewRef.current === "chat") fetchMessages();
-    });
-    socket.on("class:started", (data) => {
-      toast.info(`Aula virtual iniciada: ${data.room}`);
-      setActiveClassroom(data.room);
-    });
-    socket.on("class:ended", () => {
-      toast.info("Aula virtual finalizada");
-      setActiveClassroom(null);
-    });
-    socket.on("student:online", (data) => {
-      toast.success(`${data.name} se ha conectado`);
-    });
-    socket.on("student:offline", (data) => {
-      toast.info(`${data.name} se ha desconectado`);
-    });
-    return () => { socket.disconnect(); };
+    if (!user || socketConnectedRef.current) return;
+    let socket: Socket | null = null;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { io } = await import("socket.io-client");
+        if (cancelled) return;
+        socket = io("/?XTransformPort=3003", { transports: ["websocket", "polling"], reconnectionAttempts: 3, timeout: 5000 });
+        socketRef.current = socket;
+        socketConnectedRef.current = true;
+        socket.on("connect", () => {
+          socket!.emit("auth", { userId: user.id, role: user.role, name: user.name });
+        });
+        socket.on("progress:updated", () => {
+          toast.info("Progreso actualizado");
+          if (viewRef.current === "teacher" && teacherViewRef.current === "progress") fetchProgress();
+        });
+        socket.on("screenshot:received", () => {
+          toast.info("Nueva captura recibida");
+          if (viewRef.current === "teacher" && teacherViewRef.current === "screenshots") fetchScreenshots();
+        });
+        socket.on("message:notification", () => {
+          toast.info("Nuevo mensaje recibido");
+          if (viewRef.current === "teacher" && teacherViewRef.current === "chat") fetchMessages();
+          if (viewRef.current === "student" && studentViewRef.current === "chat") fetchMessages();
+        });
+        socket.on("class:started", (data: { room: string }) => {
+          toast.info(`Aula virtual iniciada: ${data.room}`);
+          setActiveClassroom(data.room);
+        });
+        socket.on("class:ended", () => {
+          toast.info("Aula virtual finalizada");
+          setActiveClassroom(null);
+        });
+        socket.on("student:online", (data: { name: string }) => {
+          toast.success(`${data.name} se ha conectado`);
+        });
+        socket.on("student:offline", (data: { name: string }) => {
+          toast.info(`${data.name} se ha desconectado`);
+        });
+        socket.on("connect_error", () => {
+          // Silent fail — WebSocket is optional
+        });
+      } catch {
+        // socket.io not available — continue without real-time features
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (socket) socket.disconnect();
+    };
   }, [user, fetchProgress, fetchScreenshots, fetchMessages]);
 
   // Load data based on view

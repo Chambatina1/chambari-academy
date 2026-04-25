@@ -1,0 +1,40 @@
+"use client";
+
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <html lang="es">
+      <body>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-amber-50 px-4">
+          <div className="w-full max-w-md text-center">
+            <div className="h-20 w-20 rounded-2xl bg-emerald-600 flex items-center justify-center mx-auto mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
+                <path d="M22 10v6" />
+                <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-emerald-900 mb-2">
+              Chambari Academy
+            </h2>
+            <p className="text-emerald-700 mb-2">Ha ocurrido un error inesperado</p>
+            <p className="text-sm text-gray-500 mb-6">
+              {error?.message || "Por favor, recarga la página."}
+            </p>
+            <button
+              onClick={() => reset()}
+              className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </body>
+    </html>
+  );
+}
