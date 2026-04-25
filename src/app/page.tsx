@@ -1728,6 +1728,13 @@ function PhoneticDictionary({ entries, onRefresh, onSearch }: { entries: Phoneti
 // ════════════════════════════════════════════════════════════════
 //  STUDENT DASHBOARD
 // ════════════════════════════════════════════════════════════════
+// fallback icon aliases (must be before LESSON_ICONS which references them)
+const School = GraduationCap;
+const Hash = Target;
+const Calendar = Clock;
+const History = BookOpen;
+const Utensils = BookOpen;
+
 // Helper: topic-based icon and color for lesson cards
 const LESSON_ICONS: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
   "diagnóstico": { icon: ClipboardList, color: "text-violet-600", bg: "bg-violet-100" },
@@ -1756,12 +1763,6 @@ const LESSON_ICONS: Record<string, { icon: React.ElementType; color: string; bg:
   "repaso": { icon: Trophy, color: "text-emerald-600", bg: "bg-emerald-100" },
   "autoevaluación": { icon: Award, color: "text-emerald-600", bg: "bg-emerald-100" },
 };
-// fallback icons
-const School = GraduationCap;
-const Hash = Target;
-const Calendar = Clock;
-const History = BookOpen;
-const Utensils = BookOpen;
 
 function getLessonIcon(title: string) {
   const lower = title.toLowerCase();
@@ -2023,7 +2024,7 @@ function LessonContentRenderer({ content }: { content: string }) {
         continue;
       }
       // Detect dialog/conversation lines (A:, B:, Person 1:, etc.)
-      if /^[A-B]:\s/i.test(line) || /^(Person|Persona|Profesor|Estudiante)\s*\d?\s*:/i.test(line)) {
+      if (new RegExp("^[A-B]:\\s", "i").test(line) || new RegExp("^(Person|Persona|Profesor|Estudiante)\\s*\\d?\\s*:", "i").test(line)) {
         if (!currentBlock || currentBlock.type !== "dialog") {
           if (currentBlock) blocks.push(currentBlock);
           currentBlock = { type: "dialog", content: "", items: [] };
