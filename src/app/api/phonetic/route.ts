@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       take: 50,
     })
 
-    return NextResponse.json({ entries })
+    return NextResponse.json(entries)
   } catch (error) {
     console.error('Search phonetic error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

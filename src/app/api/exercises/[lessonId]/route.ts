@@ -29,7 +29,7 @@ export async function GET(
       orderBy: { orderIndex: 'asc' },
     })
 
-    return NextResponse.json({ exercises })
+    return NextResponse.json(exercises)
   } catch (error) {
     console.error('List exercises error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

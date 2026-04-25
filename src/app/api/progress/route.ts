@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { updatedAt: 'desc' },
       })
-      return NextResponse.json({ progress })
+      return NextResponse.json(progress)
     }
 
     // Teacher
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       orderBy: { updatedAt: 'desc' },
     })
 
-    return NextResponse.json({ progress })
+    return NextResponse.json(progress)
   } catch (error) {
     console.error('Get progress error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

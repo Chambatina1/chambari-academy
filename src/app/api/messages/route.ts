@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       take: 100,
     })
 
-    return NextResponse.json({ messages })
+    return NextResponse.json(messages)
   } catch (error) {
     console.error('Get messages error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

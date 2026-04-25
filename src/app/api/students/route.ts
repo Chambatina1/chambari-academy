@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       orderBy: { name: 'asc' },
     })
 
-    return NextResponse.json({ students })
+    return NextResponse.json(students)
   } catch (error) {
     console.error('List students error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

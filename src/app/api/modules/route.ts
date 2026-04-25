@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       orderBy: { orderIndex: 'asc' },
     })
 
-    return NextResponse.json({ modules })
+    return NextResponse.json(modules)
   } catch (error) {
     console.error('List modules error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

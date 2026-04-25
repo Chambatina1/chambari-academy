@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         orderBy: { orderIndex: 'asc' },
       })
 
-      return NextResponse.json({ lessons })
+      return NextResponse.json(lessons)
     }
 
     // Teacher sees all
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       orderBy: { orderIndex: 'asc' },
     })
 
-    return NextResponse.json({ lessons })
+    return NextResponse.json(lessons)
   } catch (error) {
     console.error('List lessons error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

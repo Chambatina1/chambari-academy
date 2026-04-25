@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { createdAt: 'desc' },
       })
-      return NextResponse.json({ screenshots })
+      return NextResponse.json(screenshots)
     }
 
     // Student sees only their own screenshots
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ screenshots })
+    return NextResponse.json(screenshots)
   } catch (error) {
     console.error('List screenshots error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

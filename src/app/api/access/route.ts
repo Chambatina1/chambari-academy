@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ accessGrants })
+    return NextResponse.json(accessGrants)
   } catch (error) {
     console.error('List access grants error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
