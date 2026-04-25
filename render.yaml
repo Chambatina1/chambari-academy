@@ -2,7 +2,7 @@ services:
   - type: web
     name: chambari-academy
     runtime: node
-    buildCommand: npm install && npx prisma generate && npm run build
+    buildCommand: npm install && npm run build
     startCommand: npx next start -p 10000
     envVars:
       - key: NODE_ENV
