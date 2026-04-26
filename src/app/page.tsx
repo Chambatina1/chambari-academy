@@ -162,8 +162,11 @@ async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 function apiUpload(path: string, formData: FormData): Promise<{ url: string }> {
   const token = localStorage.getItem(TOKEN_KEY);
-  return fetch(path, { method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : {}, body: formData }).then(r => {
-    if (!r.ok) throw new Error("Error al subir archivo");
+  return fetch(path, { method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : {}, body: formData }).then(async r => {
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ error: "Error de conexión" }));
+      throw new Error(err.error || `Error al subir archivo (${r.status})`);
+    }
     return r.json();
   });
 }
