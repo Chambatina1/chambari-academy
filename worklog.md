@@ -134,3 +134,37 @@ Built the complete frontend as a single-page application (SPA) in `src/app/page.
 - Teacher Classroom uses embedded Jitsi Meet iframe (requires browser permissions for camera/mic)
 - Student Chat auto-detects teacher from message history rather than explicit teacher lookup
 - No dark mode toggle implemented (CSS variables defined but not exposed in UI)
+
+## Task 3: 6 Major Improvements
+
+### Summary
+Implemented 6 major improvements across backend API and frontend SPA: DeepSeek API integration for exercises, publish toggle bug fix, YouTube video preview, unrestricted file uploads, manual exercise creation, and enhanced exercises tab UI.
+
+### Files Modified
+
+#### 1. DeepSeek AI Exercise Generator
+- `/src/app/api/exercises/generate/route.ts` — Replaced `z-ai-web-dev-sdk` with direct DeepSeek API (`deepseek-chat` model). Added `customExercise` handling for manual exercises (bypasses AI). Spanish-language prompt. Better error handling with specific messages.
+- `/src/app/api/exercises/[id]/route.ts` — **NEW**. DELETE endpoint for removing individual exercises (teacher only).
+- `.env.example` — Added `DEEPSEEK_API_KEY` env var.
+
+#### 2. Publish/Unpublish Toggle Fix
+- `/src/app/page.tsx` — Fixed `togglePublish` in `TeacherModules` (line ~911): now computes `newStatus` from current lesson state (`PUBLISHED` ↔ `DRAFT`) and sends `{ status: newStatus }` in the PUT body. Updated toggle button to show `Eye`/`EyeOff` icons with color-coded states (emerald=published, gray=draft).
+
+#### 3. YouTube Video Support
+- `/src/app/page.tsx` — Enhanced YouTube input in TeacherLessonEditor Multimedia tab: added "Add" button, live iframe preview that auto-extracts video ID from YouTube URLs, helper text.
+
+#### 4. File Upload Restrictions Removed
+- `/src/app/page.tsx` — Changed file input `accept` from `.pdf,.doc,.docx,.ppt,.pptx` to `*/*` with `multiple` attribute.
+- `/src/app/api/upload/route.ts` — Confirmed no file type restrictions (already supports all types).
+
+#### 5. Manual Exercise Creation
+- `/src/app/page.tsx` — Added state (`existingExercises`, `showManualExercise`, `newExercise`), `useEffect` to fetch exercises on lesson load, `addManualExercise()` function (saves via `customExercise` param), and `deleteExercise()` function (calls new DELETE endpoint).
+
+#### 6. Exercises Tab UI
+- `/src/app/page.tsx` — Replaced entire `TabsContent value="ejercicios"` with enhanced UI: shows existing exercises with delete buttons, "Eliminar todos" bulk delete, manual exercise form with question/type/options/explanation fields, divider, AI generation section. All sections properly handle empty states.
+
+### Icons Added
+- `EyeOff`, `Save` added to lucide-react imports.
+
+### Lint Status
+- ✅ 0 errors, 0 warnings after all changes.
