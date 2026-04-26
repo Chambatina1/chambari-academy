@@ -1170,7 +1170,13 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
     try {
       const data = await api<{ exercises: Exercise[]; count: number }>("/api/exercises/generate", {
         method: "POST",
-        body: JSON.stringify({ lessonId: lesson.id, type: exerciseType, count: parseInt(exerciseCount) }),
+        body: JSON.stringify({
+          lessonId: lesson.id,
+          lessonTitle: lesson.title || '',
+          lessonContent: lesson.description || '',
+          type: exerciseType,
+          count: parseInt(exerciseCount),
+        }),
       });
       setGeneratedExercises(data.exercises || []);
       toast.success(`${data.count || 0} ejercicios generados`);
@@ -1675,14 +1681,21 @@ function TeacherExercises({ modules }: { modules: Module[] }) {
 
   const generate = async () => {
     if (!selectedLessonId) { toast.error("Selecciona una lección"); return; }
+    const selectedLesson = allLessons.find((l) => l.id === selectedLessonId);
     setGenerating(true);
     try {
-      const data = await api<Exercise[]>("/api/exercises/generate", {
+      const data = await api<{ exercises: Exercise[]; count: number }>("/api/exercises/generate", {
         method: "POST",
-        body: JSON.stringify({ lessonId: selectedLessonId, type: exerciseType, count: parseInt(exerciseCount) }),
+        body: JSON.stringify({
+          lessonId: selectedLessonId,
+          lessonTitle: selectedLesson?.title || '',
+          lessonContent: selectedLesson?.description || '',
+          type: exerciseType,
+          count: parseInt(exerciseCount),
+        }),
       });
-      setExercises(data);
-      toast.success(`${data.length} ejercicios generados`);
+      setExercises(data.exercises || []);
+      toast.success(`${data.count || 0} ejercicios generados`);
     } catch (e: any) { toast.error(e.message); }
     setGenerating(false);
   };
@@ -2898,8 +2911,12 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
         }),
       });
       setChatMessages((prev) => [...prev, { role: "assistant", content: data.message }]);
-    } catch {
-      setChatMessages((prev) => [...prev, { role: "assistant", content: "Lo siento, tuve un problema. Intenta de nuevo." }]);
+    } catch (e: any) {
+      const errMsg = e?.message || 'Error desconocido';
+      const friendlyMsg = errMsg.includes('401')
+        ? 'Tu sesión expiró. Vuelve a iniciar sesión para usar el asistente IA.'
+        : 'Lo siento, tuve un problema de conexión. Intenta de nuevo.';
+      setChatMessages((prev) => [...prev, { role: "assistant", content: friendlyMsg }]);
     }
     setChatLoading(false);
   };
