@@ -53,8 +53,11 @@ model Lesson {
   content       String?
   videoUrl      String?
   youtubeUrl    String?
+  tiktokUrl     String?
+  videoUrls     String?   // JSON array of additional video URLs
   documentUrl   String?
   documentName  String?
+  documentUrls  String?   // JSON array of additional {url, name} objects
   orderIndex    Int      @default(0)
   status        String   @default("DRAFT") // DRAFT | PUBLISHED | ARCHIVED
   createdAt     DateTime @default(now())

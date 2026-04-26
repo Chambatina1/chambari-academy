@@ -46,7 +46,7 @@ import {
   Brain, Heart, Lightbulb, Library, Settings,
   Languages, MessageCircle, Map, BookMarked, Headphones,
   ClipboardList, Trophy, Flame, Gem, Palette,
-  Lock, Unlock
+  Lock, Unlock, MonitorPlay, Music
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────
@@ -78,8 +78,11 @@ interface Lesson {
   content?: string;
   videoUrl?: string;
   youtubeUrl?: string;
+  tiktokUrl?: string;
+  videoUrls?: string;
   documentUrl?: string;
   documentName?: string;
+  documentUrls?: string;
   orderIndex: number;
   status: string;
   exercises?: Exercise[];
@@ -167,7 +170,7 @@ function apiUpload(path: string, formData: FormData): Promise<{ url: string }> {
 
 // ── View Type ─────────────────────────────────────────────────
 type View = "landing" | "login" | "register" | "teacher" | "student";
-type TeacherView = "dashboard" | "modules" | "lesson-editor" | "students" | "exercises" | "progress" | "screenshots" | "dictionary";
+type TeacherView = "dashboard" | "modules" | "lesson-editor" | "students" | "exercises" | "progress" | "screenshots" | "dictionary" | "classroom";
 type StudentView = "dashboard" | "lesson" | "exercises" | "dictionary" | "progress";
 
 // ── Page Component ────────────────────────────────────────────
@@ -527,6 +530,7 @@ export default function ChambariAcademy() {
               {teacherView === "progress" && <TeacherProgress key="progress" students={students} progressData={progressData} onRefresh={fetchProgress} />}
               {teacherView === "screenshots" && <TeacherScreenshots key="screenshots" screenshots={screenshots} onRefresh={fetchScreenshots} />}
               {teacherView === "dictionary" && <PhoneticDictionary key="tdict" entries={phoneticEntries} onRefresh={() => fetchPhonetic()} onSearch={fetchPhonetic} />}
+              {teacherView === "classroom" && <TeacherClassroom key="classroom" modules={modules} onBack={() => setTeacherView("modules")} />}
             </AnimatePresence>
           </main>
         </div>
@@ -732,6 +736,7 @@ function TeacherSidebarNav({ currentView, onNavigate }: { currentView: TeacherVi
     { view: "progress", icon: BarChart3, label: "Progreso" },
     { view: "screenshots", icon: Camera, label: "Capturas" },
     { view: "dictionary", icon: Book, label: "Diccionario Fonético" },
+    { view: "classroom", icon: MonitorPlay, label: "Vista de Clase" },
   ];
 
   return (
@@ -1037,6 +1042,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
   const [content, setContent] = useState(lesson?.content || "");
   const [youtubeUrl, setYoutubeUrl] = useState(lesson?.youtubeUrl || "");
   const [videoUrl, setVideoUrl] = useState(lesson?.videoUrl || "");
+  const [tiktokUrl, setTiktokUrl] = useState(lesson?.tiktokUrl || "");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [documentUrl, setDocumentUrl] = useState(lesson?.documentUrl || "");
   const [documentName, setDocumentName] = useState(lesson?.documentName || "");
@@ -1090,7 +1096,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
         docName = documentFile.name;
       }
       const body: Record<string, any> = {
-        title, description, content, youtubeUrl, videoUrl,
+        title, description, content, youtubeUrl, videoUrl, tiktokUrl,
         documentUrl: docUrl, documentName: docName,
       };
       if (!lesson && module) {
@@ -1183,6 +1189,11 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
               <div className="space-y-2">
                 <Label>URL de Video</Label>
                 <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://...mp4" className="rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">URL de TikTok <Badge className="text-[9px] bg-pink-100 text-pink-700 border-0">Nuevo</Badge></Label>
+                <Input value={tiktokUrl} onChange={(e) => setTiktokUrl(e.target.value)} placeholder="https://www.tiktok.com/@usuario/video/123456" className="rounded-xl" />
+                <p className="text-[10px] text-muted-foreground">Pega el enlace de un video de TikTok para embeberlo en la clase</p>
               </div>
               <div className="space-y-2">
                 <Label>Documento</Label>
@@ -1803,6 +1814,266 @@ function PhoneticDictionary({ entries, onRefresh, onSearch }: { entries: Phoneti
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </motion.div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TEACHER CLASSROOM VIEW — Teacher sees class like students
+// ════════════════════════════════════════════════════════════════
+function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () => void }) {
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("contenido");
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const all: Lesson[] = [];
+        for (const mod of modules) {
+          const ls = await api<Lesson[]>(`/api/lessons?moduleId=${mod.id}`);
+          all.push(...ls.map((l) => ({ ...l, moduleId: mod.id })));
+        }
+        setLessons(all.filter((l) => l.status === "PUBLISHED").sort((a, b) => a.orderIndex - b.orderIndex));
+      } catch { toast.error("Error al cargar lecciones"); }
+      setLoading(false);
+    };
+    load();
+  }, [modules]);
+
+  const getTiktokEmbedUrl = (url: string) => {
+    if (!url) return "";
+    const match = url.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/);
+    return match ? `https://www.tiktok.com/embed/v2/${match[1]}` : "";
+  };
+
+  const getYoutubeEmbedUrl = (url: string) => {
+    if (!url) return "";
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s]+)/);
+    return match ? `https://www.youtube.com/embed/${match[1]}` : "";
+  };
+
+  const parseExtraVideos = (videoUrls: string | undefined) => {
+    if (!videoUrls) return [];
+    try { return JSON.parse(videoUrls); } catch { return []; }
+  };
+
+  const parseExtraDocs = (docUrls: string | undefined) => {
+    if (!docUrls) return [];
+    try { return JSON.parse(docUrls); } catch { return []; }
+  };
+
+  if (loading) return <div className="p-4"><Skeleton className="h-64 rounded-2xl" /></div>;
+
+  if (selectedLesson) {
+    // Teacher viewing a lesson — same as student view
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-0">
+        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-emerald-100 px-4 pt-3 pb-2.5">
+          <div className="flex items-center gap-3 mb-2">
+            <Button variant="ghost" size="icon" onClick={() => setSelectedLesson(null)} className="rounded-xl h-8 w-8 shrink-0 hover:bg-emerald-50">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-bold text-sm truncate text-emerald-900">{selectedLesson.title}</h2>
+              <p className="text-[10px] text-muted-foreground truncate">{selectedLesson.description}</p>
+            </div>
+            <Badge className="bg-emerald-600 text-white text-[10px] border-0">Modo Profesor</Badge>
+          </div>
+        </div>
+        <div className="p-4 pb-24">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="w-full grid grid-cols-4 mb-4 h-11">
+              <TabsTrigger value="contenido" className="text-[11px] gap-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                <BookOpen className="h-3.5 w-3.5" /> Contenido
+              </TabsTrigger>
+              <TabsTrigger value="videos" className="text-[11px] gap-1">
+                <Play className="h-3.5 w-3.5" /> Videos
+              </TabsTrigger>
+              <TabsTrigger value="documentos" className="text-[11px] gap-1">
+                <FileText className="h-3.5 w-3.5" /> Docs
+              </TabsTrigger>
+              <TabsTrigger value="ejercicios" className="text-[11px] gap-1">
+                <Sparkles className="h-3.5 w-3.5" /> Tests
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="contenido">
+              {selectedLesson.content ? <LessonContentRenderer content={selectedLesson.content} /> : (
+                <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+                  <CardContent className="py-10 text-center">
+                    <BookOpen className="h-7 w-7 text-emerald-300 mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">Sin contenido</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="videos">
+              <div className="space-y-4">
+                {/* Main YouTube video */}
+                {selectedLesson.youtubeUrl && getYoutubeEmbedUrl(selectedLesson.youtubeUrl) && (
+                  <Card className="rounded-xl overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="aspect-video"><iframe src={getYoutubeEmbedUrl(selectedLesson.youtubeUrl)} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope" /></div>
+                      <div className="p-3 flex items-center gap-2">
+                        <div className="h-6 w-6 rounded bg-red-100 flex items-center justify-center"><Play className="h-3 w-3 text-red-600" /></div>
+                        <p className="text-xs font-medium text-muted-foreground">Video principal - YouTube</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                {/* TikTok video */}
+                {selectedLesson.tiktokUrl && getTiktokEmbedUrl(selectedLesson.tiktokUrl) && (
+                  <Card className="rounded-xl overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="aspect-[9/16] max-h-[500px] mx-auto"><iframe src={getTiktokEmbedUrl(selectedLesson.tiktokUrl)} className="w-full h-full" allowFullScreen /></div>
+                      <div className="p-3 flex items-center gap-2">
+                        <div className="h-6 w-6 rounded bg-pink-100 flex items-center justify-center"><Music className="h-3 w-3 text-pink-600" /></div>
+                        <p className="text-xs font-medium text-muted-foreground">Video - TikTok</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                {/* Direct video */}
+                {selectedLesson.videoUrl && (
+                  <Card className="rounded-xl overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="aspect-video bg-black"><video src={selectedLesson.videoUrl} controls className="w-full h-full" /></div>
+                    </CardContent>
+                  </Card>
+                )}
+                {/* Additional videos */}
+                {parseExtraVideos(selectedLesson.videoUrls).map((v: { url: string; title?: string }, i: number) => (
+                  <Card key={i} className="rounded-xl overflow-hidden">
+                    <CardContent className="p-0">
+                      {getYoutubeEmbedUrl(v.url) ? (
+                        <div className="aspect-video"><iframe src={getYoutubeEmbedUrl(v.url)} className="w-full h-full" allowFullScreen /></div>
+                      ) : getTiktokEmbedUrl(v.url) ? (
+                        <div className="aspect-[9/16] max-h-[500px] mx-auto"><iframe src={getTiktokEmbedUrl(v.url)} className="w-full h-full" allowFullScreen /></div>
+                      ) : (
+                        <div className="aspect-video bg-black"><video src={v.url} controls className="w-full h-full" /></div>
+                      )}
+                      <div className="p-3"><p className="text-xs font-medium text-muted-foreground">{v.title || `Video adicional ${i + 1}`}</p></div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {!selectedLesson.youtubeUrl && !selectedLesson.tiktokUrl && !selectedLesson.videoUrl && (!selectedLesson.videoUrls || parseExtraVideos(selectedLesson.videoUrls).length === 0) && (
+                  <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+                    <CardContent className="py-10 text-center">
+                      <Video className="h-7 w-7 text-emerald-300 mx-auto mb-2" />
+                      <p className="text-muted-foreground text-sm">No hay videos disponibles</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="documentos">
+              <div className="space-y-3">
+                {/* Main document */}
+                {selectedLesson.documentUrl && (
+                  <Card className="rounded-xl">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
+                        <FileText className="h-8 w-8 text-amber-600" />
+                        <div className="flex-1"><p className="font-medium text-sm">{selectedLesson.documentName || "Documento principal"}</p></div>
+                        <Button size="sm" variant="outline" className="rounded-xl" asChild><a href={selectedLesson.documentUrl} target="_blank"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                {/* Additional documents */}
+                {parseExtraDocs(selectedLesson.documentUrls).map((d: { url: string; name?: string }, i: number) => (
+                  <Card key={i} className="rounded-xl">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-200">
+                        <FileText className="h-7 w-7 text-blue-600" />
+                        <div className="flex-1"><p className="font-medium text-sm">{d.name || `Documento ${i + 1}`}</p></div>
+                        <Button size="sm" variant="outline" className="rounded-xl" asChild><a href={d.url} target="_blank"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {!selectedLesson.documentUrl && (!selectedLesson.documentUrls || parseExtraDocs(selectedLesson.documentUrls).length === 0) && (
+                  <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+                    <CardContent className="py-10 text-center">
+                      <FileText className="h-7 w-7 text-emerald-300 mx-auto mb-2" />
+                      <p className="text-muted-foreground text-sm">No hay documentos disponibles</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="ejercicios">
+              <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+                <CardContent className="py-10 text-center">
+                  <Sparkles className="h-7 w-7 text-emerald-300 mx-auto mb-2" />
+                  <p className="text-muted-foreground text-sm">Los ejercicios se gestionan desde la pestana Ejercicios AI</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Lesson list (similar to student dashboard but for teacher)
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 space-y-5">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-700 to-indigo-800 p-5 text-white">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-1">
+            <MonitorPlay className="h-4 w-4 text-amber-300" />
+            <p className="text-violet-100 text-xs font-medium">Modo Presentador</p>
+          </div>
+          <h1 className="text-xl font-bold">Vista de Clase</h1>
+          <p className="text-violet-200 text-sm mt-0.5">Selecciona una leccion para presentar en vivo</p>
+        </div>
+      </div>
+      {lessons.length === 0 ? (
+        <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+          <CardContent className="py-12 text-center">
+            <BookOpen className="h-8 w-8 text-emerald-300 mx-auto mb-3" />
+            <p className="font-medium text-emerald-900">No hay lecciones publicadas</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {lessons.map((lesson) => {
+            const iconData = getLessonIcon(lesson.title);
+            const IconComp = iconData.icon;
+            return (
+              <motion.div key={lesson.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+                <Card className="rounded-xl cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all border-violet-50 overflow-hidden group" onClick={() => { setSelectedLesson(lesson); setActiveTab("contenido"); }}>
+                  <CardContent className="p-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${iconData.bg} ${iconData.color}`}>
+                        <IconComp className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate text-gray-800">{lesson.title.replace(/^Clase \d+:\s*/, "")}</p>
+                        <p className="text-[11px] text-muted-foreground truncate mt-0.5">{lesson.description || "Leccion"}</p>
+                        <div className="flex gap-1 mt-1.5">
+                          {lesson.youtubeUrl && <Badge variant="secondary" className="text-[9px] h-4">YouTube</Badge>}
+                          {lesson.tiktokUrl && <Badge variant="secondary" className="text-[9px] h-4 bg-pink-100 text-pink-700">TikTok</Badge>}
+                          {lesson.videoUrl && <Badge variant="secondary" className="text-[9px] h-4">Video</Badge>}
+                          {lesson.documentUrl && <Badge variant="secondary" className="text-[9px] h-4 bg-amber-100 text-amber-700">Doc</Badge>}
+                        </div>
+                      </div>
+                      <Play className="h-5 w-5 text-violet-400 shrink-0 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
     </motion.div>
   );
 }
