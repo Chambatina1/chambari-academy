@@ -40,9 +40,9 @@ import {
   GraduationCap, BookOpen, Users, Sparkles, BarChart3, Camera,
   Video, Book, Home, Plus, Trash2, Edit, LogOut,
   Menu, Search, X, ChevronLeft, ChevronRight, ChevronDown,
-  Upload, CheckCircle, Circle, Play, Eye, Download, RefreshCw,
+  Upload, CheckCircle, Circle, Play, Eye, EyeOff, Download, RefreshCw,
   Globe, Mic, Volume2, FileText, PenTool, ArrowLeft, Loader2,
-  Star, Award, Clock, Target, Zap, Shield,
+  Star, Award, Clock, Target, Zap, Shield, Save,
   Brain, Heart, Lightbulb, Library, Settings,
   Languages, MessageCircle, Map, BookMarked, Headphones,
   ClipboardList, Trophy, Flame, Gem, Palette,
@@ -910,8 +910,13 @@ function TeacherModules({ modules, students, onRefresh, onSelectModule, onSelect
 
   const togglePublish = async (id: string, moduleId: string) => {
     try {
-      await api(`/api/lessons/${id}/publish`, { method: "PUT" });
-      toast.success("Estado actualizado");
+      const currentLesson = (moduleLessons[moduleId] || []).find(l => l.id === id);
+      const newStatus = currentLesson?.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
+      await api(`/api/lessons/${id}/publish`, { 
+        method: "PUT", 
+        body: JSON.stringify({ status: newStatus }) 
+      });
+      toast.success(newStatus === 'PUBLISHED' ? "Clase publicada" : "Clase desactivada");
       loadLessons(moduleId);
     } catch (e: any) { toast.error(e.message); }
   };
@@ -1007,8 +1012,14 @@ function TeacherModules({ modules, students, onRefresh, onSelectModule, onSelect
                           <Badge variant={lesson.status === "PUBLISHED" ? "default" : "secondary"} className={lesson.status === "PUBLISHED" ? "bg-emerald-600 text-white text-[10px]" : "text-[10px]"}>
                             {lesson.status === "PUBLISHED" ? "Publicado" : "Borrador"}
                           </Badge>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => togglePublish(lesson.id, mod.id)}>
-                            {lesson.status === "PUBLISHED" ? <Eye className="h-3 w-3" /> : <Upload className="h-3 w-3" />}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className={`h-7 w-7 ${lesson.status === 'PUBLISHED' ? 'text-emerald-600 hover:text-red-500' : 'text-gray-400 hover:text-emerald-500'}`} 
+                            onClick={() => togglePublish(lesson.id, mod.id)}
+                            title={lesson.status === 'PUBLISHED' ? 'Desactivar clase' : 'Publicar clase'}
+                          >
+                            {lesson.status === 'PUBLISHED' ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
                           </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onSelectLesson(lesson, mod)}>
                             <Edit className="h-3 w-3" />
@@ -1053,14 +1064,25 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [toggleLoading, setToggleLoading] = useState<string | null>(null);
+  const [existingExercises, setExistingExercises] = useState<Exercise[]>([]);
+  const [showManualExercise, setShowManualExercise] = useState(false);
+  const [newExercise, setNewExercise] = useState({ question: '', type: 'multiple_choice', options: ['', '', '', ''], correctAnswer: '', explanation: '' });
 
   // Pre-populate selectedStudents from existing access grants when editing a lesson
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (lesson && accessGrants.length > 0) {
       const granted = accessGrants.filter((g) => g.lessonId === lesson.id && g.active).map((g) => g.studentId);
       setSelectedStudents(granted);
     }
   }, [lesson, accessGrants]);
+
+  useEffect(() => {
+    if (lesson) {
+      api<Exercise[]>(`/api/exercises/${lesson.id}`).then(setExistingExercises).catch(() => {});
+    }
+  }, [lesson]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const toggleStudentAccess = async (studentId: string, grantId?: string) => {
     if (!lesson) return;
@@ -1122,14 +1144,51 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
     if (!lesson) { toast.error("Guarda la lección primero para generar ejercicios"); return; }
     setGenerating(true);
     try {
-      const data = await api<Exercise[]>("/api/exercises/generate", {
+      const data = await api<{ exercises: Exercise[]; count: number }>("/api/exercises/generate", {
         method: "POST",
         body: JSON.stringify({ lessonId: lesson.id, type: exerciseType, count: parseInt(exerciseCount) }),
       });
-      setGeneratedExercises(data);
-      toast.success(`${data.length} ejercicios generados`);
+      setGeneratedExercises(data.exercises || []);
+      toast.success(`${data.count || 0} ejercicios generados`);
+      // Refresh existing exercises
+      const updated = await api<Exercise[]>(`/api/exercises/${lesson.id}`);
+      setExistingExercises(updated);
     } catch (e: any) { toast.error(e.message); }
     setGenerating(false);
+  };
+
+  const addManualExercise = async () => {
+    if (!lesson || !newExercise.question.trim() || !newExercise.correctAnswer.trim()) {
+      toast.error('Pregunta y respuesta correcta son obligatorias');
+      return;
+    }
+    try {
+      const opts = newExercise.type === 'multiple_choice' ? JSON.stringify(newExercise.options.filter(Boolean)) : null;
+      await api('/api/exercises/generate', {
+        method: 'POST',
+        body: JSON.stringify({
+          lessonId: lesson.id,
+          type: newExercise.type,
+          count: 1,
+          customExercise: { question: newExercise.question, options: opts, correctAnswer: newExercise.correctAnswer, explanation: newExercise.explanation }
+        })
+      });
+      // Refresh exercises
+      const updated = await api<Exercise[]>(`/api/exercises/${lesson.id}`);
+      setExistingExercises(updated);
+      setNewExercise({ question: '', type: 'multiple_choice', options: ['', '', '', ''], correctAnswer: '', explanation: '' });
+      setShowManualExercise(false);
+      toast.success('Ejercicio agregado');
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const deleteExercise = async (exerciseId: string) => {
+    if (!lesson) return;
+    try {
+      await api(`/api/exercises/${exerciseId}`, { method: 'DELETE' });
+      setExistingExercises(existingExercises.filter(e => e.id !== exerciseId));
+      toast.success('Ejercicio eliminado');
+    } catch { toast.error('Error al eliminar'); }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1183,8 +1242,28 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
           <Card className="rounded-xl">
             <CardContent className="p-4 space-y-4">
               <div className="space-y-2">
-                <Label>URL de YouTube</Label>
-                <Input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." className="rounded-xl" />
+                <Label>Videos de YouTube</Label>
+                <div className="flex gap-2">
+                  <Input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." className="rounded-xl flex-1" />
+                  <Button type="button" variant="outline" size="icon" className="rounded-xl shrink-0" onClick={() => {
+                    if (youtubeUrl.trim()) {
+                      setYoutubeUrl('');
+                      toast.success('Video agregado');
+                    }
+                  }}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {youtubeUrl && (
+                  <div className="mt-2 rounded-xl overflow-hidden border">
+                    <iframe 
+                      src={youtubeUrl.includes('youtube.com') ? `https://www.youtube.com/embed/${new URL(youtubeUrl).searchParams.get('v') || youtubeUrl.split('/').pop()}` : youtubeUrl} 
+                      className="w-full aspect-video" 
+                      allowFullScreen 
+                    />
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground">Pega un enlace de YouTube para obtener vista previa</p>
               </div>
               <div className="space-y-2">
                 <Label>URL de Video</Label>
@@ -1198,7 +1277,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
               <div className="space-y-2">
                 <Label>Documento</Label>
                 <div className="flex items-center gap-3">
-                  <Input type="file" accept=".pdf,.doc,.docx,.ppt,.pptx" onChange={handleFileUpload} className="rounded-xl" />
+                  <Input type="file" accept="*/*" multiple onChange={handleFileUpload} className="rounded-xl" />
                   {documentName && <span className="text-sm text-emerald-600">{documentName}</span>}
                 </div>
                 {documentUrl && <a href={documentUrl} target="_blank" className="text-sm text-emerald-600 hover:underline flex items-center gap-1"><FileText className="h-3 w-3" /> Ver documento actual</a>}
@@ -1213,9 +1292,98 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
             <CardContent className="p-4 space-y-4">
               {lesson ? (
                 <>
+                  {/* Existing Exercises */}
+                  {existingExercises.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-sm">Ejercicios Existentes ({existingExercises.length})</h3>
+                        <Button variant="destructive" size="sm" className="rounded-xl text-[11px] h-7" onClick={async () => {
+                          try { await api(`/api/exercises/${lesson.id}`, { method: "DELETE" }); setExistingExercises([]); toast.success('Todos los ejercicios eliminados'); } catch { toast.error('Error'); }
+                        }}>
+                          <Trash2 className="h-3 w-3 mr-1" /> Eliminar todos
+                        </Button>
+                      </div>
+                      <ScrollArea className="max-h-60">
+                        <div className="space-y-2 pr-4">
+                          {existingExercises.map((ex) => (
+                            <div key={ex.id} className="p-3 rounded-xl bg-white border border-emerald-100 flex items-start gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium">{ex.question}</p>
+                                {ex.options && <p className="text-xs text-muted-foreground mt-1">{ex.options}</p>}
+                                <p className="text-xs text-emerald-600 mt-1">✓ {ex.correctAnswer}</p>
+                                {ex.explanation && <p className="text-xs text-muted-foreground mt-1 italic">{ex.explanation}</p>}
+                              </div>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-red-400 hover:text-red-600" onClick={() => deleteExercise(ex.id)}>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
+
+                  {/* Manual Exercise Form */}
+                  {!showManualExercise ? (
+                    <Button variant="outline" className="w-full rounded-xl border-dashed" onClick={() => setShowManualExercise(true)}>
+                      <Plus className="h-4 w-4 mr-2" /> Agregar Ejercicio Manual
+                    </Button>
+                  ) : (
+                    <div className="p-4 rounded-xl border-2 border-dashed border-amber-200 bg-amber-50/30 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-sm">Nuevo Ejercicio Manual</h3>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowManualExercise(false)}><X className="h-3 w-3" /></Button>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Pregunta</Label>
+                        <Input value={newExercise.question} onChange={(e) => setNewExercise({ ...newExercise, question: e.target.value })} placeholder="Escribe la pregunta..." className="rounded-xl text-sm" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-xs">Tipo</Label>
+                          <Select value={newExercise.type} onValueChange={(v) => setNewExercise({ ...newExercise, type: v })}>
+                            <SelectTrigger className="rounded-xl text-sm"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="multiple_choice">Opción Múltiple</SelectItem>
+                              <SelectItem value="true_false">Verdadero / Falso</SelectItem>
+                              <SelectItem value="fill_blank">Completar Espacio</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">Respuesta Correcta</Label>
+                          <Input value={newExercise.correctAnswer} onChange={(e) => setNewExercise({ ...newExercise, correctAnswer: e.target.value })} placeholder="Respuesta..." className="rounded-xl text-sm" />
+                        </div>
+                      </div>
+                      {newExercise.type === 'multiple_choice' && (
+                        <div className="space-y-2">
+                          <Label className="text-xs">Opciones (4 opciones)</Label>
+                          {newExercise.options.map((opt, i) => (
+                            <Input key={i} value={opt} onChange={(e) => {
+                              const updated = [...newExercise.options];
+                              updated[i] = e.target.value;
+                              setNewExercise({ ...newExercise, options: updated });
+                            }} placeholder={`Opción ${i + 1}`} className="rounded-xl text-sm" />
+                          ))}
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        <Label className="text-xs">Explicación (opcional)</Label>
+                        <Input value={newExercise.explanation} onChange={(e) => setNewExercise({ ...newExercise, explanation: e.target.value })} placeholder="¿Por qué es esta la respuesta correcta?" className="rounded-xl text-sm" />
+                      </div>
+                      <Button onClick={addManualExercise} className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm">
+                        <Save className="h-4 w-4 mr-2" /> Guardar Ejercicio
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Divider */}
+                  {existingExercises.length > 0 && <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">O generar con IA</span></div></div>}
+
+                  {/* AI Generation */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Tipo de Ejercicio</Label>
+                      <Label className="text-xs">Tipo</Label>
                       <Select value={exerciseType} onValueChange={setExerciseType}>
                         <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -1226,7 +1394,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Cantidad</Label>
+                      <Label className="text-xs">Cantidad</Label>
                       <Select value={exerciseCount} onValueChange={setExerciseCount}>
                         <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -1240,16 +1408,15 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
                     Generar con IA
                   </Button>
                   {generatedExercises.length > 0 && (
-                    <div className="space-y-3 mt-4">
-                      <h3 className="font-semibold">Ejercicios Generados ({generatedExercises.length})</h3>
-                      <ScrollArea className="max-h-96">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-sm text-amber-700">Recién Generados ({generatedExercises.length})</h3>
+                      <ScrollArea className="max-h-48">
                         <div className="space-y-2 pr-4">
                           {generatedExercises.map((ex, i) => (
                             <div key={i} className="p-3 rounded-xl bg-amber-50 border border-amber-200">
-                              <p className="text-sm font-medium">{i + 1}. {ex.question}</p>
+                              <p className="text-sm font-medium">{ex.question}</p>
                               {ex.options && <p className="text-xs text-muted-foreground mt-1">{ex.options}</p>}
                               <p className="text-xs text-emerald-600 mt-1">✓ {ex.correctAnswer}</p>
-                              {ex.explanation && <p className="text-xs text-muted-foreground mt-1 italic">{ex.explanation}</p>}
                             </div>
                           ))}
                         </div>
@@ -1260,7 +1427,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <Sparkles className="h-10 w-10 mx-auto mb-2 text-amber-300" />
-                  <p>Guarda la lección primero para generar ejercicios</p>
+                  <p>Guarda la lección primero para gestionar ejercicios</p>
                 </div>
               )}
             </CardContent>

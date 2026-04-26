@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getUserFromRequest } from '@/lib/auth'
-import ZAI from 'z-ai-web-dev-sdk'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,42 +13,93 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { lessonId, lessonTitle, lessonContent, count = 5, type = 'multiple_choice' } = body
+    const { lessonId, lessonTitle, lessonContent, count = 5, type = 'multiple_choice', customExercise } = body
 
     if (!lessonId) {
       return NextResponse.json({ error: 'lessonId is required' }, { status: 400 })
     }
 
-    const topic = lessonTitle || 'general knowledge'
+    // ── Handle custom (manual) exercise ─────────────────────────
+    if (customExercise) {
+      const { question, options, correctAnswer, explanation } = customExercise
+      if (!question || !correctAnswer) {
+        return NextResponse.json({ error: 'Pregunta y respuesta correcta son obligatorias' }, { status: 400 })
+      }
+
+      const saved = await db.exercise.create({
+        data: {
+          lessonId,
+          type: type || 'multiple_choice',
+          question,
+          options: options || null,
+          correctAnswer,
+          explanation: explanation || null,
+          orderIndex: 0,
+        },
+      })
+
+      return NextResponse.json({ exercises: [saved], count: 1 }, { status: 201 })
+    }
+
+    // ── AI-generated exercises via DeepSeek ─────────────────────
+    const apiKey = process.env.DEEPSEEK_API_KEY
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'DEEPSEEK_API_KEY no está configurada. Agrégala a tu archivo .env' },
+        { status: 500 }
+      )
+    }
+
+    const topic = lessonTitle || 'conocimiento general'
     const content = lessonContent || ''
 
-    const zai = await ZAI.create()
+    const prompt = `Eres un profesor experto de inglés. Genera exactamente ${count} ejercicios de tipo "${type}" sobre el tema: "${topic}".
 
-    const prompt = `You are an expert English language teacher. Generate exactly ${count} ${type} exercises about the topic: "${topic}".
+${content ? `Contexto del contenido de la lección:\n${content}\n\n` : ''}Reglas importantes:
+- Responde SOLO con un array JSON válido, sin markdown, sin explicaciones, sin bloques de código.
+- Cada ejercicio debe tener: "question" (string en español), "options" (array de strings para multiple_choice, null para otros tipos), "correctAnswer" (string), "explanation" (string en español).
+- Las preguntas deben ser claras, educativas y apropiadas para estudiantes de inglés.
+- Las opciones deben ser plausibles pero solo una respuesta correcta.
+- Las explicaciones deben ser útiles y educativas en español.
+- Los ejercicios deben estar en español sobre el aprendizaje del inglés.
 
-${content ? `Lesson content context:\n${content}\n\n` : ''}Important rules:
-- Return ONLY a valid JSON array, no markdown, no explanation, no code blocks.
-- Each exercise must have: "question" (string), "options" (array of strings for multiple_choice, null for other types), "correctAnswer" (string), "explanation" (string).
-- Questions should be clear, educational, and appropriate for English learners.
-- Options should be plausible but only one correct answer.
-- Explanations should be helpful and educational.
+Ejemplo de formato:
+[{"question":"¿Cuál es el pasado de 'go'?","options":["goed","went","gone","going"],"correctAnswer":"went","explanation":"El pasado irregular de 'go' es 'went'."}]
 
-Example format:
-[{"question":"What is...","options":["A","B","C","D"],"correctAnswer":"A","explanation":"..."}]
+Genera los ejercicios ahora:`
 
-Generate the exercises now:`
-
-    const completion = await zai.chat.completions.create({
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert exercise generator. Always respond with valid JSON arrays only.',
-        },
-        { role: 'user', content: prompt },
-      ],
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          {
+            role: 'system',
+            content: 'Eres un generador experto de ejercicios educativos. Siempre responde únicamente con arrays JSON válidos.',
+          },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.7,
+        max_tokens: 4096,
+      }),
     })
 
-    const responseText = completion.choices?.[0]?.message?.content || '[]'
+    if (!response.ok) {
+      const errText = await response.text()
+      console.error('DeepSeek API error:', response.status, errText)
+      return NextResponse.json(
+        { error: `Error al generar ejercicios con IA (${response.status}). Intenta de nuevo.` },
+        { status: 500 }
+      )
+    }
+
+    const data = await response.json()
+    const responseText = data.choices?.[0]?.message?.content || '[]'
+
     // Clean up response - remove markdown code blocks if present
     const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
 
@@ -64,13 +114,13 @@ Generate the exercises now:`
       exercises = JSON.parse(cleaned)
     } catch {
       return NextResponse.json(
-        { error: 'Failed to parse generated exercises. Please try again.' },
+        { error: 'No se pudo parsear los ejercicios generados. Por favor intenta de nuevo.' },
         { status: 500 }
       )
     }
 
     if (!Array.isArray(exercises) || exercises.length === 0) {
-      return NextResponse.json({ error: 'No exercises were generated' }, { status: 500 })
+      return NextResponse.json({ error: 'No se generaron ejercicios' }, { status: 500 })
     }
 
     // Save exercises to DB
@@ -93,6 +143,6 @@ Generate the exercises now:`
     return NextResponse.json({ exercises: savedExercises, count: savedExercises.length }, { status: 201 })
   } catch (error) {
     console.error('Generate exercises error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
   }
 }
