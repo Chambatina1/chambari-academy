@@ -45,7 +45,8 @@ import {
   Star, Award, Clock, Target, Zap, Shield,
   Brain, Heart, Lightbulb, Library, Settings,
   Languages, MessageCircle, Map, BookMarked, Headphones,
-  ClipboardList, Trophy, Flame, Gem, Palette
+  ClipboardList, Trophy, Flame, Gem, Palette,
+  Lock, Unlock
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────
@@ -269,6 +270,7 @@ export default function ChambariAcademy() {
       fetchProgress();
       fetchPhonetic();
       fetchScreenshots();
+      fetchAccessGrants();
     }
     if (view === "student" && user) {
       fetchModules();
@@ -519,7 +521,7 @@ export default function ChambariAcademy() {
             <AnimatePresence mode="wait">
               {teacherView === "dashboard" && <TeacherDashboard key="dashboard" modules={modules} students={students} progressData={progressData} onNavigate={setTeacherView} />}
               {teacherView === "modules" && <TeacherModules key="modules" modules={modules} students={students} onRefresh={fetchModules} onSelectModule={(m) => { setSelectedModule(m); }} onSelectLesson={(l, m) => { setSelectedLesson(l); setSelectedModule(m); setTeacherView("lesson-editor"); }} onNewLesson={(m) => { setSelectedModule(m); setSelectedLesson(null); setTeacherView("lesson-editor"); }} />}
-              {teacherView === "lesson-editor" && <TeacherLessonEditor key="editor" module={selectedModule} lesson={selectedLesson} students={students} onSave={() => { fetchModules(); setTeacherView("modules"); }} onBack={() => setTeacherView("modules")} />}
+              {teacherView === "lesson-editor" && <TeacherLessonEditor key={selectedLesson?.id || "new"} module={selectedModule} lesson={selectedLesson} students={students} accessGrants={allAccessGrants} onSave={() => { fetchModules(); fetchAccessGrants(); setTeacherView("modules"); }} onBack={() => setTeacherView("modules")} />}
               {teacherView === "students" && <TeacherStudents key="students" students={students} progressData={progressData} onRefresh={() => { fetchStudents(); fetchProgress(); }} />}
               {teacherView === "exercises" && <TeacherExercises key="exercises" modules={modules} />}
               {teacherView === "progress" && <TeacherProgress key="progress" students={students} progressData={progressData} onRefresh={fetchProgress} />}
@@ -1029,7 +1031,7 @@ function TeacherModules({ modules, students, onRefresh, onSelectModule, onSelect
 // ════════════════════════════════════════════════════════════════
 //  TEACHER LESSON EDITOR
 // ════════════════════════════════════════════════════════════════
-function TeacherLessonEditor({ module, lesson, students, onSave, onBack }: { module: Module | null; lesson: Lesson | null; students: User[]; onSave: () => void; onBack: () => void }) {
+function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, onBack }: { module: Module | null; lesson: Lesson | null; students: User[]; accessGrants: StudentAccess[]; onSave: () => void; onBack: () => void }) {
   const [title, setTitle] = useState(lesson?.title || "");
   const [description, setDescription] = useState(lesson?.description || "");
   const [content, setContent] = useState(lesson?.content || "");
@@ -1044,6 +1046,34 @@ function TeacherLessonEditor({ module, lesson, students, onSave, onBack }: { mod
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [toggleLoading, setToggleLoading] = useState<string | null>(null);
+
+  // Pre-populate selectedStudents from existing access grants when editing a lesson
+  useEffect(() => {
+    if (lesson && accessGrants.length > 0) {
+      const granted = accessGrants.filter((g) => g.lessonId === lesson.id && g.active).map((g) => g.studentId);
+      setSelectedStudents(granted);
+    }
+  }, [lesson, accessGrants]);
+
+  const toggleStudentAccess = async (studentId: string, grantId?: string) => {
+    if (!lesson) return;
+    setToggleLoading(studentId);
+    try {
+      if (grantId) {
+        // Revoke access
+        await api(`/api/access/${grantId}`, { method: "DELETE" });
+        setSelectedStudents(selectedStudents.filter((id) => id !== studentId));
+        toast.success("Acceso revocado");
+      } else {
+        // Grant access
+        await api("/api/access", { method: "POST", body: JSON.stringify({ studentId, lessonId: lesson.id }) });
+        setSelectedStudents([...selectedStudents, studentId]);
+        toast.success("Acceso concedido");
+      }
+    } catch { toast.error("Error al cambiar acceso"); }
+    setToggleLoading(null);
+  };
 
   const saveLesson = async () => {
     if (!title.trim()) { toast.error("El título es obligatorio"); return; }
@@ -1229,24 +1259,76 @@ function TeacherLessonEditor({ module, lesson, students, onSave, onBack }: { mod
         <TabsContent value="acceso" className="space-y-4">
           <Card className="rounded-xl">
             <CardContent className="p-4 space-y-4">
-              <h3 className="font-semibold">Conceder Acceso a Estudiantes</h3>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold">Gestionar Acceso de Estudiantes</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">{selectedStudents.length} de {students.length} estudiantes con acceso{lesson ? "" : " (guarda la leccion primero)"}</p>
+                </div>
+                {lesson && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-xl text-xs"
+                    onClick={async () => {
+                      if (selectedStudents.length === students.length) {
+                        setSelectedStudents([]);
+                        for (const s of students) {
+                          const g = accessGrants.find((a) => a.lessonId === lesson.id && a.studentId === s.id);
+                          if (g) try { await api(`/api/access/${g.id}`, { method: "DELETE" }); } catch {}
+                        }
+                        toast.success("Acceso revocado a todos");
+                      } else {
+                        const newSelected = students.map((s) => s.id);
+                        setSelectedStudents(newSelected);
+                        for (const s of students) {
+                          const hasAccess = accessGrants.find((a) => a.lessonId === lesson.id && a.studentId === s.id);
+                          if (!hasAccess) try { await api("/api/access", { method: "POST", body: JSON.stringify({ studentId: s.id, lessonId: lesson.id }) }); } catch {}
+                        }
+                        toast.success("Acceso concedido a todos");
+                      }
+                    }}
+                  >
+                    {selectedStudents.length === students.length ? <><Lock className="h-3 w-3 mr-1" /> Bloquear todos</> : <><Unlock className="h-3 w-3 mr-1" /> Liberar todos</>}
+                  </Button>
+                )}
+              </div>
               {students.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No hay estudiantes registrados</p>
+                <div className="text-center py-8">
+                  <Users className="h-10 w-10 mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm text-muted-foreground">No hay estudiantes registrados</p>
+                </div>
               ) : (
-                <ScrollArea className="max-h-72">
+                <ScrollArea className="max-h-80">
                   <div className="space-y-2 pr-4">
-                    {students.map((s) => (
-                      <label key={s.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-emerald-50 cursor-pointer">
-                        <Checkbox checked={selectedStudents.includes(s.id)} onCheckedChange={(v) => {
-                          if (v) setSelectedStudents([...selectedStudents, s.id]);
-                          else setSelectedStudents(selectedStudents.filter((id) => id !== s.id));
-                        }} />
-                        <div>
-                          <p className="text-sm font-medium">{s.name}</p>
-                          <p className="text-xs text-muted-foreground">{s.email}</p>
+                    {students.map((s) => {
+                      const hasAccess = selectedStudents.includes(s.id);
+                      const grant = lesson ? accessGrants.find((a) => a.lessonId === lesson.id && a.studentId === s.id) : undefined;
+                      const isLoading = toggleLoading === s.id;
+                      return (
+                        <div key={s.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${hasAccess ? "border-emerald-200 bg-emerald-50/50" : "border-gray-100 bg-white"}`}>
+                          <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${hasAccess ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-400"}`}>
+                            {s.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{s.name}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{s.email}</p>
+                          </div>
+                          {lesson ? (
+                            <Button
+                              size="sm"
+                              variant={hasAccess ? "default" : "outline"}
+                              className={`rounded-xl text-[11px] ${hasAccess ? "bg-emerald-600 hover:bg-red-500 text-white" : "hover:bg-emerald-50"}`}
+                              disabled={isLoading}
+                              onClick={() => toggleStudentAccess(s.id, grant?.id)}
+                            >
+                              {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : hasAccess ? <><Lock className="h-3 w-3 mr-1" /> Bloquear</> : <><Unlock className="h-3 w-3 mr-1" /> Liberar</>}
+                            </Button>
+                          ) : (
+                            <Badge variant="secondary" className="text-[10px]">Guarda primero</Badge>
+                          )}
                         </div>
-                      </label>
-                    ))}
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               )}
