@@ -46,7 +46,7 @@ import {
   Brain, Heart, Lightbulb, Library, Settings,
   Languages, MessageCircle, Map, BookMarked, Headphones,
   ClipboardList, Trophy, Flame, Gem, Palette,
-  Lock, Unlock, MonitorPlay, Music, Bot, Send
+  Lock, Unlock, MonitorPlay, Music, Bot, Send, Youtube
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────
@@ -1081,6 +1081,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [documentUrl, setDocumentUrl] = useState(lesson?.documentUrl || "");
   const [documentName, setDocumentName] = useState(lesson?.documentName || "");
+  const [documentLinkInput, setDocumentLinkInput] = useState(lesson?.documentUrl || "");
   const [exerciseType, setExerciseType] = useState("multiple_choice");
   const [exerciseCount, setExerciseCount] = useState("5");
   const [generatedExercises, setGeneratedExercises] = useState<Exercise[]>([]);
@@ -1132,7 +1133,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
     if (!module && !lesson) { toast.error("No hay módulo seleccionado"); return; }
     setSaving(true);
     try {
-      let docUrl = documentUrl;
+      let docUrl = documentUrl || documentLinkInput;
       let docName = documentName;
       if (documentFile) {
         const formData = new FormData();
@@ -1272,18 +1273,8 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
           <Card className="rounded-xl">
             <CardContent className="p-4 space-y-4">
               <div className="space-y-2">
-                <Label>Videos de YouTube</Label>
-                <div className="flex gap-2">
-                  <Input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." className="rounded-xl flex-1" />
-                  <Button type="button" variant="outline" size="icon" className="rounded-xl shrink-0" onClick={() => {
-                    if (youtubeUrl.trim()) {
-                      setYoutubeUrl('');
-                      toast.success('Video agregado');
-                    }
-                  }}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Label className="flex items-center gap-2"><Youtube className="h-4 w-4 text-red-500" /> Video de YouTube</Label>
+                <Input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/watch?v=..." className="rounded-xl" />
                 {youtubeUrl && (
                   <div className="mt-2 rounded-xl overflow-hidden border">
                     <iframe 
@@ -1293,24 +1284,41 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
                     />
                   </div>
                 )}
-                <p className="text-[10px] text-muted-foreground">Pega un enlace de YouTube para obtener vista previa</p>
+                <p className="text-[10px] text-muted-foreground">Pega un enlace de YouTube. Se guardara automaticamente al guardar la leccion.</p>
               </div>
               <div className="space-y-2">
-                <Label>URL de Video</Label>
+                <Label className="flex items-center gap-2"><Video className="h-4 w-4 text-blue-500" /> URL de Video Directo</Label>
                 <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://...mp4" className="rounded-xl" />
+                <p className="text-[10px] text-muted-foreground">Enlace a un archivo de video MP4/WebM</p>
               </div>
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">URL de TikTok <Badge className="text-[9px] bg-pink-100 text-pink-700 border-0">Nuevo</Badge></Label>
+                <Label className="flex items-center gap-2"><Music className="h-4 w-4 text-pink-500" /> URL de TikTok</Label>
                 <Input value={tiktokUrl} onChange={(e) => setTiktokUrl(e.target.value)} placeholder="https://www.tiktok.com/@usuario/video/123456" className="rounded-xl" />
                 <p className="text-[10px] text-muted-foreground">Pega el enlace de un video de TikTok para embeberlo en la clase</p>
               </div>
               <div className="space-y-2">
-                <Label>Documento</Label>
-                <div className="flex items-center gap-3">
-                  <Input type="file" accept="*/*" multiple onChange={handleFileUpload} className="rounded-xl" />
-                  {documentName && <span className="text-sm text-emerald-600">{documentName}</span>}
+                <Label className="flex items-center gap-2"><FileText className="h-4 w-4 text-amber-500" /> Documento</Label>
+                <div className="space-y-2">
+                  <Input value={documentLinkInput} onChange={(e) => setDocumentLinkInput(e.target.value)} placeholder="https://drive.google.com/... o https://ejemplo.com/documento.pdf" className="rounded-xl" />
+                  <p className="text-[10px] text-muted-foreground">O pega un enlace a un documento (Google Drive, PDF, etc.)</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-[10px] text-muted-foreground">o sube un archivo</span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+                  <Input type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.png" onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setDocumentFile(file);
+                      setDocumentName(file.name);
+                      setDocumentLinkInput("");
+                      toast.success("Archivo seleccionado: " + file.name);
+                    }
+                  }} className="rounded-xl" />
                 </div>
-                {documentUrl && <a href={documentUrl} target="_blank" className="text-sm text-emerald-600 hover:underline flex items-center gap-1"><FileText className="h-3 w-3" /> Ver documento actual</a>}
+                {documentUrl && (
+                  <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-emerald-600 hover:underline flex items-center gap-1"><FileText className="h-3 w-3" /> Ver documento actual{documentName ? ": " + documentName : ""}</a>
+                )}
               </div>
 
             </CardContent>
