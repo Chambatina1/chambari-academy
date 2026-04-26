@@ -2723,7 +2723,7 @@ function LessonContentRenderer({ content }: { content: string }) {
 }
 
 // ── Document Viewer Helper ──────────────────────────────────
-// Handles PDFs, Google Docs, Google Drive, and any URL
+// Handles PDFs, Office docs, Google Docs, Google Drive, images, videos
 
 // Normalize old /uploads/ URLs to new /api/files/ endpoint
 function normalizeFileUrl(url: string): string {
@@ -2734,15 +2734,23 @@ function normalizeFileUrl(url: string): string {
   return url;
 }
 
-function getDocumentType(url: string): 'pdf' | 'google-drive' | 'google-docs' | 'image' | 'video' | 'other' {
+type DocType = 'pdf' | 'office' | 'google-drive' | 'google-docs' | 'image' | 'video' | 'other';
+
+function getDocumentType(url: string): DocType {
   if (!url) return 'other';
   const lower = url.toLowerCase();
   if (url.includes('drive.google.com') && (url.includes('/file/d/') || url.includes('/open?id='))) return 'google-drive';
   if (url.includes('docs.google.com/document') || url.includes('docs.google.com/spreadsheets') || url.includes('docs.google.com/presentation')) return 'google-docs';
   if (lower.endsWith('.pdf') || lower.includes('.pdf?') || lower.includes('.pdf#')) return 'pdf';
+  if (/\.(doc|docx|ppt|pptx|xls|xlsx|rtf)(\?|$)/i.test(lower)) return 'office';
   if (/\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?|$)/i.test(lower)) return 'image';
   if (/\.(mp4|webm|ogg)(\?|$)/i.test(lower)) return 'video';
   return 'other';
+}
+
+function resolveFullUrl(url: string): string {
+  if (url.startsWith('http')) return url;
+  return `${window.location.origin}${url}`;
 }
 
 function renderDocumentViewer(rawUrl: string, title: string) {
@@ -2770,32 +2778,27 @@ function renderDocumentViewer(rawUrl: string, title: string) {
   }
   // PDFs — embed directly in iframe (browsers render PDFs natively)
   else if (docType === 'pdf') {
-    if (!url.startsWith('http')) {
-      embedUrl = `${window.location.origin}${url}`;
-    }
+    embedUrl = resolveFullUrl(url);
+  }
+  // Office documents (Word, Excel, PowerPoint) — use Microsoft Office Online Viewer
+  else if (docType === 'office') {
+    const fullUrl = resolveFullUrl(url);
+    embedUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fullUrl)}`;
   }
   // Images — embed directly
   else if (docType === 'image') {
-    if (!url.startsWith('http')) {
-      embedUrl = `${window.location.origin}${url}`;
-    }
+    embedUrl = resolveFullUrl(url);
   }
   // Videos — embed directly
   else if (docType === 'video') {
-    if (!url.startsWith('http')) {
-      embedUrl = `${window.location.origin}${url}`;
-    }
+    embedUrl = resolveFullUrl(url);
   }
-  // Other file types (Word, PPT, Excel, etc.) — cannot embed, open as link only
+  // Other file types — cannot embed, open as link only
   else {
-    if (!url.startsWith('http')) {
-      embedUrl = `${window.location.origin}${url}`;
-    }
     canEmbed = false;
   }
 
-  // For local uploaded files, the open link should point to the full URL
-  const openUrl = !url.startsWith('http') ? `${window.location.origin}${url}` : url;
+  const openUrl = resolveFullUrl(url);
 
   return (
     <div className="mt-3 rounded-xl overflow-hidden bg-muted border relative">

@@ -8,7 +8,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Allow public paths
-  if (PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith('/api/auth'))) {
+  if (PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith('/api/auth') || pathname.startsWith('/api/files'))) {
     return NextResponse.next()
   }
 
