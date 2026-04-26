@@ -37,7 +37,7 @@ import {
 
 // ── Lucide Icons ──────────────────────────────────────────────
 import {
-  GraduationCap, BookOpen, Users, Sparkles, BarChart3, Camera,
+  GraduationCap, BookOpen, Users, Sparkles, BarChart3,
   Video, Book, Home, Plus, Trash2, Edit, LogOut,
   Menu, Search, X, ChevronLeft, ChevronRight, ChevronDown,
   Upload, CheckCircle, Circle, Play, Eye, EyeOff, Download, RefreshCw,
@@ -121,16 +121,6 @@ interface StudentProgress {
   student?: User;
 }
 
-interface Screenshot {
-  id: string;
-  studentId: string;
-  lessonId: string;
-  imageUrl: string;
-  caption?: string;
-  createdAt: string;
-  student?: User;
-  lesson?: Lesson;
-}
 
 interface PhoneticEntry {
   id: string;
@@ -173,7 +163,7 @@ function apiUpload(path: string, formData: FormData): Promise<{ url: string }> {
 
 // ── View Type ─────────────────────────────────────────────────
 type View = "landing" | "login" | "register" | "teacher" | "student";
-type TeacherView = "dashboard" | "modules" | "lesson-editor" | "students" | "exercises" | "progress" | "screenshots" | "dictionary" | "classroom";
+type TeacherView = "dashboard" | "modules" | "lesson-editor" | "students" | "exercises" | "progress" | "dictionary" | "classroom";
 type StudentView = "dashboard" | "lesson" | "exercises" | "dictionary" | "progress";
 
 // ── Page Component ────────────────────────────────────────────
@@ -193,7 +183,6 @@ export default function ChambariAcademy() {
   const [students, setStudents] = useState<User[]>([]);
   const [allAccessGrants, setAllAccessGrants] = useState<StudentAccess[]>([]);
   const [progressData, setProgressData] = useState<StudentProgress[]>([]);
-  const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
   const [phoneticEntries, setPhoneticEntries] = useState<PhoneticEntry[]>([]);
   const [currentExercises, setCurrentExercises] = useState<Exercise[]>([]);
   const [studentAnswers, setStudentAnswers] = useState<Record<string, string>>({});
@@ -243,14 +232,6 @@ export default function ChambariAcademy() {
     } catch { toast.error("Error al cargar progreso"); }
   }, [user]);
 
-  const fetchScreenshots = useCallback(async () => {
-    if (!user) return;
-    try {
-      const params = user.role === "STUDENT" ? `?studentId=${user.id}` : "";
-      const data = await api<Screenshot[]>(`/api/screenshots${params}`);
-      setScreenshots(data);
-    } catch { toast.error("Error al cargar capturas"); }
-  }, [user]);
 
   const fetchPhonetic = useCallback(async (query?: string) => {
     try {
@@ -275,7 +256,6 @@ export default function ChambariAcademy() {
       fetchStudents();
       fetchProgress();
       fetchPhonetic();
-      fetchScreenshots();
       fetchAccessGrants();
     }
     if (view === "student" && user) {
@@ -283,7 +263,7 @@ export default function ChambariAcademy() {
       fetchProgress();
       fetchPhonetic();
     }
-  }, [view, user, fetchModules, fetchStudents, fetchProgress, fetchPhonetic, fetchScreenshots]);
+  }, [view, user, fetchModules, fetchStudents, fetchProgress, fetchPhonetic]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   // ── Auth Handlers ─────────────────────────────────────────
@@ -328,25 +308,6 @@ export default function ChambariAcademy() {
     toast.success("Sesión cerrada");
   };
 
-  // ── Screenshot capture (student) ──────────────────────────
-  const captureScreenshot = useCallback((): Promise<{ blob: Blob; url: string } | null> => {
-    const contentEl = document.getElementById("lesson-content-area");
-    if (!contentEl) { toast.error("No hay contenido para capturar"); return Promise.resolve(null); }
-    // Use a simple canvas-based approach since html2canvas is not installed
-    // We'll use the native approach: prompt user to share screen / take screenshot
-    return new Promise<{ blob: Blob; url: string } | null>((resolve) => {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = "image/*";
-      input.capture = "environment";
-      input.onchange = async (e: any) => {
-        const file = e.target.files?.[0];
-        if (!file) { resolve(null); return; }
-        resolve({ blob: file, url: URL.createObjectURL(file) });
-      };
-      input.click();
-    });
-  }, []);
 
   // ════════════════════════════════════════════════════════════
   //  LOADING SCREEN
@@ -531,7 +492,6 @@ export default function ChambariAcademy() {
               {teacherView === "students" && <TeacherStudents key="students" students={students} progressData={progressData} onRefresh={() => { fetchStudents(); fetchProgress(); }} />}
               {teacherView === "exercises" && <TeacherExercises key="exercises" modules={modules} />}
               {teacherView === "progress" && <TeacherProgress key="progress" students={students} progressData={progressData} onRefresh={fetchProgress} />}
-              {teacherView === "screenshots" && <TeacherScreenshots key="screenshots" screenshots={screenshots} onRefresh={fetchScreenshots} />}
               {teacherView === "dictionary" && <PhoneticDictionary key="tdict" entries={phoneticEntries} onRefresh={() => fetchPhonetic()} onSearch={fetchPhonetic} />}
               {teacherView === "classroom" && <TeacherClassroom key="classroom" modules={modules} onBack={() => setTeacherView("modules")} />}
             </AnimatePresence>
@@ -567,7 +527,7 @@ export default function ChambariAcademy() {
         <main className="flex-1 overflow-auto">
           <AnimatePresence mode="wait">
             {studentView === "dashboard" && <StudentDashboard key="sdash" user={user} modules={modules} progressData={progressData} accessGrants={allAccessGrants} onRefresh={() => { fetchModules(); fetchProgress(); fetchAccessGrants(); }} onSelectLesson={(l) => { setSelectedLesson(l); setStudentView("lesson"); setStudentAnswers({}); fetchExercises(l.id); }} />}
-            {studentView === "lesson" && selectedLesson && <StudentLesson key="slesson" user={user} lesson={selectedLesson} exercises={currentExercises} progressData={progressData} studentAnswers={studentAnswers} onAnswerChange={setStudentAnswers} onBack={() => setStudentView("dashboard")} onSubmitProgress={async (lessonId, pct, completed) => { try { await api("/api/progress", { method: "POST", body: JSON.stringify({ lessonId, progressPercent: pct, completed }) }); toast.success("Progreso guardado"); fetchProgress(); } catch { toast.error("Error al guardar"); } }} onCapture={captureScreenshot} onRefreshExercises={() => fetchExercises(selectedLesson.id)} />}
+            {studentView === "lesson" && selectedLesson && <StudentLesson key="slesson" user={user} lesson={selectedLesson} exercises={currentExercises} progressData={progressData} studentAnswers={studentAnswers} onAnswerChange={setStudentAnswers} onBack={() => setStudentView("dashboard")} onSubmitProgress={async (lessonId, pct, completed) => { try { await api("/api/progress", { method: "POST", body: JSON.stringify({ lessonId, progressPercent: pct, completed }) }); toast.success("Progreso guardado"); fetchProgress(); } catch { toast.error("Error al guardar"); } }} onRefreshExercises={() => fetchExercises(selectedLesson.id)} />}
             {studentView === "dictionary" && <PhoneticDictionary key="sdict" entries={phoneticEntries} onRefresh={() => fetchPhonetic()} onSearch={fetchPhonetic} />}
           </AnimatePresence>
         </main>
@@ -739,7 +699,6 @@ function TeacherSidebarNav({ currentView, onNavigate }: { currentView: TeacherVi
     { view: "students", icon: Users, label: "Estudiantes" },
     { view: "exercises", icon: Sparkles, label: "Ejercicios AI" },
     { view: "progress", icon: BarChart3, label: "Progreso" },
-    { view: "screenshots", icon: Camera, label: "Capturas" },
     { view: "dictionary", icon: Book, label: "Diccionario Fonético" },
     { view: "classroom", icon: MonitorPlay, label: "Vista de Clase" },
   ];
@@ -1867,69 +1826,6 @@ function TeacherProgress({ students, progressData, onRefresh }: { students: User
 }
 
 // ════════════════════════════════════════════════════════════════
-//  TEACHER SCREENSHOTS VIEW
-// ════════════════════════════════════════════════════════════════
-function TeacherScreenshots({ screenshots, onRefresh }: { screenshots: Screenshot[]; onRefresh: () => void }) {
-  const [selected, setSelected] = useState<Screenshot | null>(null);
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-emerald-900">Capturas</h1>
-          <p className="text-muted-foreground">Capturas de pantalla de los estudiantes</p>
-        </div>
-        <Button variant="outline" className="rounded-xl" onClick={onRefresh}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Actualizar
-        </Button>
-      </div>
-
-      {screenshots.length === 0 ? (
-        <Card className="rounded-xl">
-          <CardContent className="py-12 text-center">
-            <Camera className="h-10 w-10 mx-auto mb-2 text-emerald-300" />
-            <p className="text-muted-foreground">No hay capturas recibidas</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {screenshots.map((ss) => (
-            <Card key={ss.id} className="rounded-xl cursor-pointer hover:shadow-md transition-shadow overflow-hidden" onClick={() => setSelected(ss)}>
-              <div className="aspect-video bg-muted relative">
-                <img src={ss.imageUrl} alt="Captura" className="w-full h-full object-cover" />
-              </div>
-              <CardContent className="p-3">
-                <p className="text-sm font-medium truncate">{ss.student?.name || "Estudiante"}</p>
-                <p className="text-xs text-muted-foreground truncate">{ss.lesson?.title || "Lección"}</p>
-                <p className="text-[10px] text-muted-foreground mt-1">{new Date(ss.createdAt).toLocaleString("es")}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Full size dialog */}
-      <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="max-w-3xl rounded-2xl">
-          {selected && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selected.student?.name || "Estudiante"} — {selected.lesson?.title || "Lección"}</DialogTitle>
-                <DialogDescription>{new Date(selected.createdAt).toLocaleString("es")}</DialogDescription>
-              </DialogHeader>
-              <div className="rounded-xl overflow-hidden bg-muted">
-                <img src={selected.imageUrl} alt="Captura completa" className="w-full" />
-              </div>
-              {selected.caption && <p className="text-sm text-muted-foreground italic">"{selected.caption}"</p>}
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </motion.div>
-  );
-}
-
-// ════════════════════════════════════════════════════════════════
 //  PHONETIC DICTIONARY (shared teacher + student)
 // ════════════════════════════════════════════════════════════════
 function PhoneticDictionary({ entries, onRefresh, onSearch }: { entries: PhoneticEntry[]; onRefresh: () => void; onSearch: (q?: string) => void }) {
@@ -2867,10 +2763,8 @@ function renderDocumentViewer(url: string, title: string) {
 // ════════════════════════════════════════════════════════════════
 //  STUDENT LESSON VIEW
 // ════════════════════════════════════════════════════════════════
-function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, onAnswerChange, onBack, onSubmitProgress, onCapture, onRefreshExercises }: { user: User; lesson: Lesson; exercises: Exercise[]; progressData: StudentProgress[]; studentAnswers: Record<string, string>; onAnswerChange: (a: Record<string, string>) => void; onBack: () => void; onSubmitProgress: (lessonId: string, pct: number, completed: boolean) => void; onCapture: () => Promise<{ blob: Blob; url: string } | null>; onRefreshExercises: () => void }) {
+function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, onAnswerChange, onBack, onSubmitProgress, onRefreshExercises }: { user: User; lesson: Lesson; exercises: Exercise[]; progressData: StudentProgress[]; studentAnswers: Record<string, string>; onAnswerChange: (a: Record<string, string>) => void; onBack: () => void; onSubmitProgress: (lessonId: string, pct: number, completed: boolean) => void; onRefreshExercises: () => void }) {
   const [activeTab, setActiveTab] = useState("contenido");
-  const [caption, setCaption] = useState("");
-  const [sendingCapture, setSendingCapture] = useState(false);
 
   // AI Chat state
   const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
@@ -2917,34 +2811,6 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
   const markComplete = () => {
     const pct = exercises.length > 0 ? Math.round((exerciseScore / exercises.length) * 100) : 100;
     onSubmitProgress(lesson.id, Math.max(pct, 100), true);
-  };
-
-  const sendScreenshot = async () => {
-    const result = await onCapture();
-    if (!result) return;
-    setSendingCapture(true);
-    try {
-      // Upload the screenshot
-      const formData = new FormData();
-      formData.append("file", result.blob, "screenshot.png");
-      const uploadRes = await apiUpload("/api/upload", formData);
-      
-      // Save screenshot record
-      await api("/api/screenshots", {
-        method: "POST",
-        body: JSON.stringify({
-          lessonId: lesson.id,
-          imageUrl: uploadRes.url,
-          caption: caption || undefined,
-        }),
-      });
-
-      toast.success("Captura enviada al profesor");
-      setCaption("");
-    } catch {
-      toast.error("Error al enviar captura");
-    }
-    setSendingCapture(false);
   };
 
   const sendChatMessage = async () => {
@@ -3014,9 +2880,6 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
             </TabsTrigger>
             <TabsTrigger value="chat" className="text-[11px] gap-1">
               <Bot className="h-3.5 w-3.5" /> IA
-            </TabsTrigger>
-            <TabsTrigger value="capturar" className="text-[11px] gap-1">
-              <Camera className="h-3.5 w-3.5" /> Foto
             </TabsTrigger>
           </TabsList>
 
@@ -3322,28 +3185,6 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                     {chatLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="capturar">
-            <Card className="rounded-xl">
-              <CardContent className="p-4 space-y-4">
-                <div className="text-center">
-                  <div className="h-16 w-16 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto mb-3">
-                    <Camera className="h-8 w-8 text-amber-600" />
-                  </div>
-                  <h3 className="font-semibold">Captura de Pantalla</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Toma una foto o captura de tu trabajo</p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Nota (opcional)</Label>
-                  <Input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Añade una nota para tu profesor..." className="rounded-xl" />
-                </div>
-                <Button onClick={sendScreenshot} className="w-full rounded-xl bg-amber-500 hover:bg-amber-600 text-white h-11" disabled={sendingCapture}>
-                  {sendingCapture ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Camera className="h-4 w-4 mr-2" />}
-                  Tomar y Enviar Captura
-                </Button>
               </CardContent>
             </Card>
           </TabsContent>
