@@ -19,6 +19,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
+    }
+
     const existing = await db.user.findUnique({ where: { email } })
     if (existing) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 })

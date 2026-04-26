@@ -4,6 +4,23 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import crypto from 'crypto'
 
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
+  'application/pdf',
+  'video/mp4',
+  'video/webm',
+  'audio/mpeg',
+  'audio/wav',
+  'text/plain',
+  'application/json',
+]
+
+const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+
 export async function POST(request: NextRequest) {
   try {
     const user = getUserFromRequest(request)
@@ -16,6 +33,16 @@ export async function POST(request: NextRequest) {
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'File size exceeds 50MB limit' }, { status: 400 })
+    }
+
+    // Validate MIME type
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      return NextResponse.json({ error: `File type "${file.type}" is not allowed. Allowed: images, PDF, video, audio, text` }, { status: 400 })
     }
 
     const bytes = await file.arrayBuffer()

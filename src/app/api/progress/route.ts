@@ -58,6 +58,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'lessonId is required' }, { status: 400 })
     }
 
+    // Validate progressPercent
+    if (progressPercent !== undefined) {
+      const pct = Number(progressPercent)
+      if (Number.isNaN(pct) || pct < 0 || pct > 100) {
+        return NextResponse.json({ error: 'progressPercent must be a number between 0 and 100' }, { status: 400 })
+      }
+    }
+
+    // Validate completed is boolean
+    if (completed !== undefined && typeof completed !== 'boolean') {
+      return NextResponse.json({ error: 'completed must be a boolean' }, { status: 400 })
+    }
+
     // Students can only update their own progress
     const targetStudentId = user.role === 'STUDENT' ? user.id : studentId
     if (!targetStudentId) {

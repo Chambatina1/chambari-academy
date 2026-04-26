@@ -1,6 +1,12 @@
 import crypto from 'crypto'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'chambari-academy-secret-key-2024'
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required')
+  }
+  return secret
+}
 
 interface TokenPayload {
   id: string
@@ -29,7 +35,7 @@ export function generateToken(user: { id: string; email: string; role: string; n
   }
   const payloadStr = JSON.stringify(payload)
   const base64 = Buffer.from(payloadStr).toString('base64url')
-  const signature = crypto.createHmac('sha256', JWT_SECRET).update(base64).digest('base64url')
+  const signature = crypto.createHmac('sha256', getJwtSecret()).update(base64).digest('base64url')
   return `${base64}.${signature}`
 }
 
@@ -39,7 +45,7 @@ export function verifyToken(token: string): TokenPayload | null {
     if (!base64 || !signature) return null
 
     const expectedSignature = crypto
-      .createHmac('sha256', JWT_SECRET)
+      .createHmac('sha256', getJwtSecret())
       .update(base64)
       .digest('base64url')
 

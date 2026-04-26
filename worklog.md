@@ -168,3 +168,91 @@ Implemented 6 major improvements across backend API and frontend SPA: DeepSeek A
 
 ### Lint Status
 - ✅ 0 errors, 0 warnings after all changes.
+
+## Task 4: Critical Security Fixes & Code Quality Improvements
+
+### Summary
+Implemented 12 changes focused on critical security vulnerabilities (exposed credentials, hardcoded secrets, passwordless login, unvalidated uploads), server-side validation, code quality (strict mode, ESLint re-enablement), and developer experience (shared types, Zod schemas, auth middleware).
+
+### Changes Implemented
+
+#### 1. 🔴 CRITICAL: start.sh — Removed exposed production credentials
+- **File**: `/start.sh`
+- **Before**: Contained hardcoded `DATABASE_URL` with real PostgreSQL credentials, `NEXTAUTH_URL`, and `NEXTAUTH_SECRET` all committed to version control
+- **After**: Script now checks for `DATABASE_URL` and `JWT_SECRET` environment variables and exits with an error if not set. No credentials in source code.
+
+#### 2. 🔴 CRITICAL: auth.ts — Removed hardcoded JWT secret fallback
+- **File**: `/src/lib/auth.ts`
+- **Before**: `const JWT_SECRET = process.env.JWT_SECRET || 'chambari-academy-secret-key-2024'` — anyone could forge JWT tokens using the known fallback
+- **After**: `getJwtSecret()` function throws `Error('JWT_SECRET environment variable is required')` if not set. Lazy evaluation prevents crashes at import time while ensuring secrets are always validated at use time.
+
+#### 3. 🔴 CRITICAL: login/route.ts — Removed teacher passwordless login
+- **File**: `/src/app/api/auth/login/route.ts`
+- **Before**: Teachers could authenticate with just an email (no password) via `if (user.role === 'TEACHER' && !password)` block
+- **After**: Both email AND password are required for ALL users. Password validation happens before any role check. Single code path for authentication.
+
+#### 4. 🟠 FIX: upload/route.ts — Added file type and size validation
+- **File**: `/src/app/api/upload/route.ts`
+- **Before**: Any file of any type and size could be uploaded (no restrictions)
+- **After**: Added `ALLOWED_MIME_TYPES` whitelist (images, PDF, video, audio, text, JSON) and `MAX_FILE_SIZE` of 50MB. Returns clear error messages for invalid files.
+
+#### 5. 🟠 FIX: progress/route.ts — Added server-side validation
+- **File**: `/src/app/api/progress/route.ts`
+- **Before**: `progressPercent` and `completed` were accepted without type/range validation
+- **After**: `progressPercent` validated as number between 0–100, `completed` validated as boolean. GET handler unchanged.
+
+#### 6. 🟡 IMPROVE: next.config.ts — Disabled ignoreBuildErrors, enabled strictMode
+- **File**: `/next.config.ts`
+- **Before**: `ignoreBuildErrors: true`, `reactStrictMode: false`
+- **After**: `ignoreBuildErrors: false`, `reactStrictMode: true` — catches type errors at build time and enables React strict mode for development warnings
+
+#### 7. 🟡 IMPROVE: eslint.config.mjs — Re-enabled important linting rules
+- **File**: `/eslint.config.mjs`
+- **Before**: All linting rules set to `"off"` — no code quality enforcement
+- **After**: Re-enabled critical rules as `"error"` (`prefer-as-const`, `react-hooks/purity`, `no-html-link-for-pages`, `no-irregular-whitespace`, `no-mixed-spaces-and-tabs`, `no-unreachable`, `no-empty`), key rules as `"warn"` (`no-explicit-any`, `no-unused-vars`, `exhaustive-deps`, `no-console`, `prefer-const`). Added `src/components/ui/**` to ignores.
+
+#### 8. 🆕 CREATE: src/types/index.ts — Shared TypeScript types
+- **File**: `/src/types/index.ts` (new)
+- Contains shared interfaces for all domain entities: `User`, `Module`, `Lesson`, `Exercise`, `StudentAccess`, `StudentProgress`, `Screenshot`, `PhoneticEntry`, plus view types and API request/response types
+
+#### 9. 🆕 CREATE: src/lib/validations.ts — Zod validation schemas
+- **File**: `/src/lib/validations.ts` (new)
+- Zod schemas for: `loginSchema`, `registerSchema`, `createModuleSchema`, `updateModuleSchema`, `createLessonSchema`, `updateLessonSchema`, `generateExercisesSchema`, `createAccessSchema`, `updateProgressSchema`, `createPhoneticSchema`
+- Includes `validateBody<T>()` helper function for use in API routes
+
+#### 10. 🆕 CREATE: src/middleware.ts — Next.js auth middleware
+- **File**: `/src/middleware.ts` (new)
+- First line of defense: public paths (`/`, `/login`, `/register`, `/api/auth/*`) are allowed without auth
+- API routes require `Authorization: Bearer` header (middleware-level check before route handler)
+- Static files and Next.js internals are allowed through
+- Edge-compatible (no JWT verification in middleware since env vars aren't available at edge)
+
+#### 11. 🟡 IMPROVE: .env.example — Added JWT_SECRET and structure
+- **File**: `/.env.example`
+- **Before**: Only had `DATABASE_URL` (commented) and `DEEPSEEK_API_KEY`
+- **After**: Added `JWT_SECRET` with guidance, `NEXTAUTH_URL`, organized with comments/sections
+
+#### 12. 🟡 IMPROVE: register/route.ts — Added email format validation
+- **File**: `/src/app/api/auth/register/route.ts`
+- Added regex-based email format validation (`/^[^\s@]+@[^\s@]+\.[^\s@]+$/`) after existing field validations, before database lookup
+
+### Files Changed Summary
+| # | File | Action |
+|---|------|--------|
+| 1 | `start.sh` | Rewritten (credentials removed) |
+| 2 | `src/lib/auth.ts` | Rewritten (hardcoded secret removed) |
+| 3 | `src/app/api/auth/login/route.ts` | Rewritten (passwordless login removed) |
+| 4 | `src/app/api/upload/route.ts` | Rewritten (validation added) |
+| 5 | `src/app/api/progress/route.ts` | Modified (validation added to POST) |
+| 6 | `next.config.ts` | Rewritten (strict mode enabled) |
+| 7 | `eslint.config.mjs` | Rewritten (rules re-enabled) |
+| 8 | `src/types/index.ts` | Created (shared types) |
+| 9 | `src/lib/validations.ts` | Created (Zod schemas) |
+| 10 | `src/middleware.ts` | Created (auth middleware) |
+| 11 | `.env.example` | Rewritten (added JWT_SECRET) |
+| 12 | `src/app/api/auth/register/route.ts` | Modified (email validation) |
+
+### Risk Assessment
+- **Critical vulnerabilities addressed**: Exposed database credentials, hardcoded JWT signing secret, passwordless teacher login
+- **Breaking changes**: Deployments MUST set `DATABASE_URL` and `JWT_SECRET` environment variables. Teachers must now provide passwords to login.
+- **Next steps**: Integrate Zod validation schemas into existing API routes, use shared types in frontend components, rotate all previously-exposed credentials immediately

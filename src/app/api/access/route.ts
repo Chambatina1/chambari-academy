@@ -60,13 +60,13 @@ export async function POST(request: NextRequest) {
       create: {
         studentId,
         lessonId,
-        accessFrom: accessFrom ? new Date(accessFrom) : null,
-        accessUntil: accessUntil ? new Date(accessUntil) : null,
+        accessFrom: accessFrom ? new Date(accessFrom) as any : null,
+        accessUntil: accessUntil ? new Date(accessUntil) as any : null,
         active: active !== undefined ? active : true,
       },
       update: {
-        accessFrom: accessFrom !== undefined ? (accessFrom ? new Date(accessFrom) : null) : undefined,
-        accessUntil: accessUntil !== undefined ? (accessUntil ? new Date(accessUntil) : null) : undefined,
+        accessFrom: accessFrom !== undefined ? (accessFrom ? new Date(accessFrom) as any : null) : undefined,
+        accessUntil: accessUntil !== undefined ? (accessUntil ? new Date(accessUntil) as any : null) : undefined,
         active: active !== undefined ? active : undefined,
       },
       include: {

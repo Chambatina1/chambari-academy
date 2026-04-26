@@ -50,8 +50,18 @@ export async function DELETE(
     }
 
     const { lessonId } = await params
-    const result = await db.exercise.deleteMany({ where: { lessonId } })
 
+    // Check if this is a request to delete a single exercise or all exercises for a lesson
+    // If the URL has a 'single' query param, delete just one; otherwise delete all for the lesson
+    const { searchParams } = new URL(request.url)
+    const singleId = searchParams.get('single')
+
+    if (singleId) {
+      await db.exercise.delete({ where: { id: singleId } })
+      return NextResponse.json({ success: true })
+    }
+
+    const result = await db.exercise.deleteMany({ where: { lessonId } })
     return NextResponse.json({ message: `Deleted ${result.count} exercises` })
   } catch (error) {
     console.error('Delete exercises error:', error)

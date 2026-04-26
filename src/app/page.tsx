@@ -46,7 +46,7 @@ import {
   Brain, Heart, Lightbulb, Library, Settings,
   Languages, MessageCircle, Map, BookMarked, Headphones,
   ClipboardList, Trophy, Flame, Gem, Palette,
-  Lock, Unlock, MonitorPlay, Music
+  Lock, Unlock, MonitorPlay, Music, Bot, Send
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────
@@ -326,9 +326,9 @@ export default function ChambariAcademy() {
   };
 
   // ── Screenshot capture (student) ──────────────────────────
-  const captureScreenshot = useCallback(() => {
+  const captureScreenshot = useCallback((): Promise<{ blob: Blob; url: string } | null> => {
     const contentEl = document.getElementById("lesson-content-area");
-    if (!contentEl) { toast.error("No hay contenido para capturar"); return null; }
+    if (!contentEl) { toast.error("No hay contenido para capturar"); return Promise.resolve(null); }
     // Use a simple canvas-based approach since html2canvas is not installed
     // We'll use the native approach: prompt user to share screen / take screenshot
     return new Promise<{ blob: Blob; url: string } | null>((resolve) => {
@@ -570,15 +570,17 @@ export default function ChambariAcademy() {
         </main>
 
         {/* Bottom Nav */}
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-emerald-100 flex justify-around items-center h-16 z-50">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-emerald-100 flex justify-around items-center h-16 z-50 safe-area-inset-bottom">
           {[
             { icon: BookOpen, label: "Clases", view: "dashboard" as StudentView },
             { icon: Book, label: "Diccionario", view: "dictionary" as StudentView },
             { icon: BarChart3, label: "Progreso", view: "progress" as StudentView },
           ].map((item) => (
-            <button key={item.view} onClick={() => setStudentView(item.view)} className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors ${studentView === item.view ? "text-emerald-600" : "text-muted-foreground hover:text-emerald-500"}`}>
-              <item.icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
+            <button key={item.view} onClick={() => setStudentView(item.view)} className={`flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-200 ${studentView === item.view ? "text-emerald-600 bg-emerald-50" : "text-muted-foreground hover:text-emerald-500"}`}>
+              <div className={`p-1.5 rounded-lg transition-all duration-200 ${studentView === item.view ? "bg-emerald-600 text-white shadow-md shadow-emerald-200" : ""}`}>
+                <item.icon className="h-4 w-4" />
+              </div>
+              <span className={`text-[10px] font-medium transition-all ${studentView === item.view ? "text-emerald-700 font-semibold" : ""}`}>{item.label}</span>
             </button>
           ))}
         </nav>
@@ -908,6 +910,22 @@ function TeacherModules({ modules, students, onRefresh, onSelectModule, onSelect
     } catch (e: any) { toast.error(e.message); }
   };
 
+  const [toggleLoading, setToggleLoading] = useState<string | null>(null);
+
+  const toggleModulePublish = async (mod: Module) => {
+    setToggleLoading(mod.id);
+    try {
+      const newStatus = mod.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
+      await api(`/api/modules/${mod.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ status: newStatus }),
+      });
+      toast.success(newStatus === 'PUBLISHED' ? "Módulo publicado" : "Módulo ocultado");
+      onRefresh();
+    } catch (e: any) { toast.error(e.message); }
+    setToggleLoading(null);
+  };
+
   const togglePublish = async (id: string, moduleId: string) => {
     try {
       const currentLesson = (moduleLessons[moduleId] || []).find(l => l.id === id);
@@ -985,6 +1003,12 @@ function TeacherModules({ modules, students, onRefresh, onSelectModule, onSelect
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Switch
+                    checked={mod.status === "PUBLISHED"}
+                    disabled={toggleLoading === mod.id}
+                    onCheckedChange={() => toggleModulePublish(mod)}
+                    className="data-[state=checked]:bg-emerald-600"
+                  />
                   <Badge variant={mod.status === "PUBLISHED" ? "default" : "secondary"} className={mod.status === "PUBLISHED" ? "bg-emerald-600 text-white" : ""}>
                     {mod.status === "PUBLISHED" ? "Publicado" : mod.status === "DRAFT" ? "Borrador" : "Archivado"}
                   </Badge>
@@ -1185,7 +1209,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
   const deleteExercise = async (exerciseId: string) => {
     if (!lesson) return;
     try {
-      await api(`/api/exercises/${exerciseId}`, { method: 'DELETE' });
+      await api(`/api/exercises/${lesson.id}?single=${exerciseId}`, { method: 'DELETE' });
       setExistingExercises(existingExercises.filter(e => e.id !== exerciseId));
       toast.success('Ejercicio eliminado');
     } catch { toast.error('Error al eliminar'); }
@@ -1993,6 +2017,8 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("contenido");
+  const [classroomExercises, setClassroomExercises] = useState<Exercise[]>([]);
+  const [loadingExercises, setLoadingExercises] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -2008,6 +2034,18 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
     };
     load();
   }, [modules]);
+
+  useEffect(() => {
+    if (selectedLesson) {
+      setLoadingExercises(true);
+      api<Exercise[]>(`/api/exercises/${selectedLesson.id}`)
+        .then(setClassroomExercises)
+        .catch(() => setClassroomExercises([]))
+        .finally(() => setLoadingExercises(false));
+    } else {
+      setClassroomExercises([]);
+    }
+  }, [selectedLesson]);
 
   const getTiktokEmbedUrl = (url: string) => {
     if (!url) return "";
@@ -2175,12 +2213,70 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
             </TabsContent>
 
             <TabsContent value="ejercicios">
-              <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
-                <CardContent className="py-10 text-center">
-                  <Sparkles className="h-7 w-7 text-emerald-300 mx-auto mb-2" />
-                  <p className="text-muted-foreground text-sm">Los ejercicios se gestionan desde la pestana Ejercicios AI</p>
-                </CardContent>
-              </Card>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge className="bg-emerald-100 text-emerald-700 text-[10px] border-0">
+                    <Eye className="h-3 w-3 mr-1" /> Modo Profesor — Vista Espejo
+                  </Badge>
+                </div>
+                {loadingExercises ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-24 rounded-xl" />
+                    ))}
+                  </div>
+                ) : classroomExercises.length === 0 ? (
+                  <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+                    <CardContent className="py-10 text-center">
+                      <Sparkles className="h-7 w-7 text-emerald-300 mx-auto mb-2" />
+                      <p className="text-muted-foreground text-sm">No hay ejercicios para esta leccion</p>
+                      <p className="text-xs text-muted-foreground mt-1">Genera ejercicios desde la pestana Ejercicios AI</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-sm">Ejercicios ({classroomExercises.length})</h3>
+                      <Badge variant="secondary" className="text-[10px]">Solo lectura</Badge>
+                    </div>
+                    <div className="space-y-3">
+                      {classroomExercises.map((ex, i) => {
+                        const options = ex.options ? ex.options.split(",").map((o) => o.trim()) : [];
+                        return (
+                          <Card key={ex.id} className="rounded-xl border-emerald-100">
+                            <CardContent className="p-4 space-y-2">
+                              <p className="font-medium text-sm">{i + 1}. {ex.question}</p>
+                              {ex.type === "multiple_choice" && options.length > 0 && (
+                                <div className="space-y-1.5">
+                                  {options.map((opt) => (
+                                    <div key={opt} className={`p-2 rounded-lg text-xs border ${opt === ex.correctAnswer ? "border-emerald-300 bg-emerald-50 text-emerald-800 font-medium" : "border-gray-100 text-gray-600"}`}>
+                                      {opt === ex.correctAnswer && "✓ "}{opt}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {ex.type === "true_false" && (
+                                <div className="flex gap-2">
+                                  <div className={`flex-1 p-2 rounded-lg text-xs border text-center ${ex.correctAnswer === "true" ? "border-emerald-300 bg-emerald-50 text-emerald-800 font-medium" : "border-gray-100 text-gray-600"}`}>✓ Verdadero</div>
+                                  <div className={`flex-1 p-2 rounded-lg text-xs border text-center ${ex.correctAnswer === "false" ? "border-emerald-300 bg-emerald-50 text-emerald-800 font-medium" : "border-gray-100 text-gray-600"}`}>✓ Falso</div>
+                                </div>
+                              )}
+                              {ex.type === "fill_blank" && (
+                                <div className="p-2 rounded-lg text-xs border border-emerald-300 bg-emerald-50 text-emerald-800">
+                                  ✓ Respuesta: {ex.correctAnswer}
+                                </div>
+                              )}
+                              {ex.explanation && (
+                                <p className="text-xs text-muted-foreground italic mt-1">💡 {ex.explanation}</p>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </div>
@@ -2358,10 +2454,11 @@ function StudentDashboard({ user, modules, progressData, accessGrants, onRefresh
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 p-5 text-white"
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-800 p-5 text-white"
       >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-20 h-20 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+        <div className="absolute top-4 right-20 w-8 h-8 bg-amber-300/20 rounded-full" />
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="h-4 w-4 text-amber-300" />
@@ -2370,26 +2467,44 @@ function StudentDashboard({ user, modules, progressData, accessGrants, onRefresh
           <h1 className="text-xl font-bold">Hola, {user.name.split(" ")[0]}!</h1>
           <p className="text-emerald-200 text-sm mt-0.5">Continua tu aprendizaje de ingles</p>
           
+          {/* Progress bar */}
+          {totalLessons > 0 && (
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-emerald-100">Progreso general</span>
+                <span className="text-xs font-bold">{overallProgress}%</span>
+              </div>
+              <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${overallProgress}%` }}
+                  transition={{ duration: 1, delay: 0.3 }}
+                  className="h-full bg-gradient-to-r from-amber-300 to-amber-400 rounded-full"
+                />
+              </div>
+            </div>
+          )}
+          
           {/* Stats Row */}
-          <div className="flex gap-4 mt-4">
-            <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
+          <div className="flex gap-3 mt-4">
+            <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2 flex-1">
               <BookOpen className="h-4 w-4" />
               <div>
-                <p className="text-xs text-emerald-100">Lecciones</p>
+                <p className="text-[10px] text-emerald-100">Lecciones</p>
                 <p className="text-sm font-bold">{completedLessons}/{totalLessons}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
+            <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2 flex-1">
               <Trophy className="h-4 w-4" />
               <div>
-                <p className="text-xs text-emerald-100">Progreso</p>
-                <p className="text-sm font-bold">{overallProgress}%</p>
+                <p className="text-[10px] text-emerald-100">Completadas</p>
+                <p className="text-sm font-bold">{completedLessons}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2">
+            <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2 flex-1">
               <Flame className="h-4 w-4 text-orange-300" />
               <div>
-                <p className="text-xs text-emerald-100">Racha</p>
+                <p className="text-[10px] text-emerald-100">Racha</p>
                 <p className="text-sm font-bold">{completedLessons > 0 ? Math.min(completedLessons, 7) : 0} dias</p>
               </div>
             </div>
@@ -2693,6 +2808,16 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
   const [caption, setCaption] = useState("");
   const [sendingCapture, setSendingCapture] = useState(false);
 
+  // AI Chat state
+  const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const chatEndRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
   const currentProgress = progressData.find((p) => p.lessonId === lesson.id);
   const progressPercent = currentProgress?.progressPercent || 0;
 
@@ -2700,6 +2825,22 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
     if (!url) return "";
     const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s]+)/);
     return match ? `https://www.youtube.com/embed/${match[1]}` : "";
+  };
+
+  const getTiktokEmbedUrl = (url: string) => {
+    if (!url) return "";
+    const match = url.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/);
+    return match ? `https://www.tiktok.com/embed/v2/${match[1]}` : "";
+  };
+
+  const parseExtraVideos = (videoUrls: string | undefined) => {
+    if (!videoUrls) return [];
+    try { return JSON.parse(videoUrls); } catch { return []; }
+  };
+
+  const parseExtraDocs = (docUrls: string | undefined) => {
+    if (!docUrls) return [];
+    try { return JSON.parse(docUrls); } catch { return []; }
   };
 
   const checkAnswer = (ex: Exercise) => {
@@ -2742,6 +2883,27 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
     setSendingCapture(false);
   };
 
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+    const userMessage = chatInput.trim();
+    setChatInput("");
+    setChatMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+    setChatLoading(true);
+    try {
+      const data = await api<{ message: string }>("/api/ai-chat", {
+        method: "POST",
+        body: JSON.stringify({
+          message: userMessage,
+          lessonContext: lesson.title + (lesson.description ? " — " + lesson.description : ""),
+        }),
+      });
+      setChatMessages((prev) => [...prev, { role: "assistant", content: data.message }]);
+    } catch {
+      setChatMessages((prev) => [...prev, { role: "assistant", content: "Lo siento, tuve un problema. Intenta de nuevo." }]);
+    }
+    setChatLoading(false);
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-0">
       {/* Header */}
@@ -2769,7 +2931,7 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
       {/* Content */}
       <div id="lesson-content-area" className="p-4 pb-24">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-5 mb-4 h-11">
+          <TabsList className="w-full grid grid-cols-6 mb-4 h-11">
             <TabsTrigger value="contenido" className="text-[11px] gap-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
               <BookOpen className="h-3.5 w-3.5" /> Contenido
             </TabsTrigger>
@@ -2781,6 +2943,9 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
             </TabsTrigger>
             <TabsTrigger value="ejercicios" className="text-[11px] gap-1">
               <Sparkles className="h-3.5 w-3.5" /> Tests
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="text-[11px] gap-1">
+              <Bot className="h-3.5 w-3.5" /> IA
             </TabsTrigger>
             <TabsTrigger value="capturar" className="text-[11px] gap-1">
               <Camera className="h-3.5 w-3.5" /> Foto
@@ -2804,59 +2969,121 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
           </TabsContent>
 
           <TabsContent value="video">
-            <Card className="rounded-xl">
-              <CardContent className="p-4">
-                {lesson.youtubeUrl ? (
-                  <div className="aspect-video rounded-xl overflow-hidden bg-muted">
-                    <iframe
-                      src={getYoutubeEmbedUrl(lesson.youtubeUrl)}
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                ) : lesson.videoUrl ? (
-                  <div className="aspect-video rounded-xl overflow-hidden bg-muted">
-                    <video src={lesson.videoUrl} controls className="w-full h-full" />
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Video className="h-10 w-10 mx-auto mb-2 text-emerald-300" />
-                    <p>No hay video disponible</p>
-                  </div>
+              <div className="space-y-4">
+                {/* Main YouTube video */}
+                {lesson.youtubeUrl && getYoutubeEmbedUrl(lesson.youtubeUrl) && (
+                  <Card className="rounded-xl overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="aspect-video"><iframe src={getYoutubeEmbedUrl(lesson.youtubeUrl)} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope" /></div>
+                      <div className="p-3 flex items-center gap-2">
+                        <div className="h-6 w-6 rounded bg-red-100 flex items-center justify-center"><Play className="h-3 w-3 text-red-600" /></div>
+                        <p className="text-xs font-medium text-muted-foreground">Video principal - YouTube</p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
-              </CardContent>
-            </Card>
+                {/* TikTok video */}
+                {lesson.tiktokUrl && getTiktokEmbedUrl(lesson.tiktokUrl) && (
+                  <Card className="rounded-xl overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="aspect-[9/16] max-h-[500px] mx-auto"><iframe src={getTiktokEmbedUrl(lesson.tiktokUrl)} className="w-full h-full" allowFullScreen /></div>
+                      <div className="p-3 flex items-center gap-2">
+                        <div className="h-6 w-6 rounded bg-pink-100 flex items-center justify-center"><Music className="h-3 w-3 text-pink-600" /></div>
+                        <p className="text-xs font-medium text-muted-foreground">Video - TikTok</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                {/* Direct video */}
+                {lesson.videoUrl && (
+                  <Card className="rounded-xl overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="aspect-video bg-black"><video src={lesson.videoUrl} controls className="w-full h-full" /></div>
+                    </CardContent>
+                  </Card>
+                )}
+                {/* Additional videos */}
+                {parseExtraVideos(lesson.videoUrls).map((v: { url: string; title?: string }, i: number) => (
+                  <Card key={i} className="rounded-xl overflow-hidden">
+                    <CardContent className="p-0">
+                      {getYoutubeEmbedUrl(v.url) ? (
+                        <div className="aspect-video"><iframe src={getYoutubeEmbedUrl(v.url)} className="w-full h-full" allowFullScreen /></div>
+                      ) : getTiktokEmbedUrl(v.url) ? (
+                        <div className="aspect-[9/16] max-h-[500px] mx-auto"><iframe src={getTiktokEmbedUrl(v.url)} className="w-full h-full" allowFullScreen /></div>
+                      ) : (
+                        <div className="aspect-video bg-black"><video src={v.url} controls className="w-full h-full" /></div>
+                      )}
+                      <div className="p-3"><p className="text-xs font-medium text-muted-foreground">{v.title || `Video adicional ${i + 1}`}</p></div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {!lesson.youtubeUrl && !lesson.tiktokUrl && !lesson.videoUrl && (!lesson.videoUrls || parseExtraVideos(lesson.videoUrls).length === 0) && (
+                  <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+                    <CardContent className="py-10 text-center">
+                      <Video className="h-7 w-7 text-emerald-300 mx-auto mb-2" />
+                      <p className="text-muted-foreground text-sm">No hay videos disponibles</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
           </TabsContent>
 
           <TabsContent value="documentos">
-            <Card className="rounded-xl">
-              <CardContent className="p-4">
-                {lesson.documentUrl ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
-                      <FileText className="h-8 w-8 text-amber-600" />
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{lesson.documentName || "Documento"}</p>
+              <div className="space-y-3">
+                {/* Main document */}
+                {lesson.documentUrl && (
+                  <Card className="rounded-xl">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
+                        <FileText className="h-8 w-8 text-amber-600" />
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{lesson.documentName || "Documento principal"}</p>
+                        </div>
+                        <Button size="sm" variant="outline" className="rounded-xl" asChild>
+                          <a href={lesson.documentUrl} target="_blank" rel="noopener noreferrer">
+                            <Download className="h-4 w-4 mr-1" /> Abrir
+                          </a>
+                        </Button>
                       </div>
-                      <Button size="sm" variant="outline" className="rounded-xl" asChild>
-                        <a href={lesson.documentUrl} target="_blank" rel="noopener noreferrer">
-                          <Download className="h-4 w-4 mr-1" /> Abrir
-                        </a>
-                      </Button>
-                    </div>
-                    <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted border">
-                      <iframe src={lesson.documentUrl} className="w-full h-full" title="Documento" />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <FileText className="h-10 w-10 mx-auto mb-2 text-emerald-300" />
-                    <p>No hay documentos disponibles</p>
-                  </div>
+                      {/* Embedded document viewer */}
+                      <div className="mt-3 aspect-[3/4] rounded-xl overflow-hidden bg-muted border">
+                        {lesson.documentUrl.endsWith('.pdf') && lesson.documentUrl.startsWith('http') ? (
+                          <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(lesson.documentUrl)}&embedded=true`} className="w-full h-full" title="Documento PDF" />
+                        ) : (
+                          <iframe src={lesson.documentUrl} className="w-full h-full" title="Documento" />
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
-              </CardContent>
-            </Card>
+                {/* Additional documents */}
+                {parseExtraDocs(lesson.documentUrls).map((d: { url: string; name?: string }, i: number) => (
+                  <Card key={i} className="rounded-xl">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-200">
+                        <FileText className="h-7 w-7 text-blue-600" />
+                        <div className="flex-1"><p className="font-medium text-sm">{d.name || `Documento ${i + 1}`}</p></div>
+                        <Button size="sm" variant="outline" className="rounded-xl" asChild><a href={d.url} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
+                      </div>
+                      <div className="mt-3 aspect-[3/4] rounded-xl overflow-hidden bg-muted border">
+                        {d.url.endsWith('.pdf') && d.url.startsWith('http') ? (
+                          <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(d.url)}&embedded=true`} className="w-full h-full" title={d.name || `Documento ${i + 1}`} />
+                        ) : (
+                          <iframe src={d.url} className="w-full h-full" title={d.name || `Documento ${i + 1}`} />
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {!lesson.documentUrl && (!lesson.documentUrls || parseExtraDocs(lesson.documentUrls).length === 0) && (
+                  <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+                    <CardContent className="py-10 text-center">
+                      <FileText className="h-7 w-7 text-emerald-300 mx-auto mb-2" />
+                      <p className="text-muted-foreground text-sm">No hay documentos disponibles</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
           </TabsContent>
 
           <TabsContent value="ejercicios">
@@ -2948,6 +3175,93 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                     </div>
                   </>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="chat">
+            <Card className="rounded-xl flex flex-col" style={{ height: "500px" }}>
+              <CardContent className="p-4 flex flex-col flex-1 gap-3 min-h-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                    <Bot className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">Asistente Chambari</p>
+                    <p className="text-[10px] text-muted-foreground">Tu tutor de ingles con IA</p>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 min-h-0">
+                  {chatMessages.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Bot className="h-10 w-10 mx-auto mb-2 text-emerald-300" />
+                      <p className="text-sm font-medium">Hola, soy tu asistente</p>
+                      <p className="text-xs mt-1">Preguntame sobre la leccion o cualquier tema de ingles</p>
+                      <div className="flex flex-wrap gap-2 justify-center mt-4">
+                        {[
+                          "Explica el presente simple",
+                          "Como uso 'much' y 'many'?",
+                          "Dame ejemplos con esta leccion",
+                        ].map((suggestion) => (
+                          <button
+                            key={suggestion}
+                            onClick={() => { setChatInput(suggestion); }}
+                            className="text-[11px] px-3 py-1.5 rounded-full border border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-colors"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {chatMessages.map((msg, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                    >
+                      <div className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed ${
+                        msg.role === "user"
+                          ? "bg-emerald-600 text-white rounded-br-md"
+                          : "bg-white border border-emerald-100 text-gray-700 rounded-bl-md"
+                      }`}>
+                        {msg.content}
+                      </div>
+                    </motion.div>
+                  ))}
+                  {chatLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-white border border-emerald-100 p-3 rounded-2xl rounded-bl-md">
+                        <div className="flex gap-1">
+                          <span className="h-2 w-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                          <span className="h-2 w-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <span className="h-2 w-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+
+                <div className="flex gap-2 pt-2 border-t border-emerald-100">
+                  <Input
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
+                    placeholder="Pregunta algo..."
+                    className="rounded-xl flex-1 text-sm"
+                    disabled={chatLoading}
+                  />
+                  <Button
+                    onClick={sendChatMessage}
+                    disabled={!chatInput.trim() || chatLoading}
+                    className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-10 w-10 p-0"
+                  >
+                    {chatLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
