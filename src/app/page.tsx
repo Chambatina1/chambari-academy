@@ -46,7 +46,7 @@ import {
   Brain, Heart, Lightbulb, Library, Settings,
   Languages, MessageCircle, Map, BookMarked, Headphones,
   ClipboardList, Trophy, Flame, Gem, Palette,
-  Lock, Unlock, MonitorPlay, Music, Bot, Send, Youtube
+  Lock, Unlock, MonitorPlay, Music, Bot, Send, Youtube, ExternalLink
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────
@@ -2724,38 +2724,102 @@ function LessonContentRenderer({ content }: { content: string }) {
 
 // ── Document Viewer Helper ──────────────────────────────────
 // Handles PDFs, Google Docs, Google Drive, and any URL
+function getDocumentType(url: string): 'pdf' | 'google-drive' | 'google-docs' | 'image' | 'video' | 'other' {
+  if (!url) return 'other';
+  const lower = url.toLowerCase();
+  if (url.includes('drive.google.com') && (url.includes('/file/d/') || url.includes('/open?id='))) return 'google-drive';
+  if (url.includes('docs.google.com/document') || url.includes('docs.google.com/spreadsheets') || url.includes('docs.google.com/presentation')) return 'google-docs';
+  if (lower.endsWith('.pdf') || lower.includes('.pdf?') || lower.includes('.pdf#')) return 'pdf';
+  if (/\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?|$)/i.test(lower)) return 'image';
+  if (/\.(mp4|webm|ogg)(\?|$)/i.test(lower)) return 'video';
+  return 'other';
+}
+
 function renderDocumentViewer(url: string, title: string) {
   if (!url) return null;
-  
-  // Convert Google Drive links to embeddable format
+
+  const docType = getDocumentType(url);
   let embedUrl = url;
-  if (url.includes('drive.google.com') && url.includes('/file/d/')) {
-    const fileId = url.match(/\/file\/d\/([^/]+)/)?.[1];
-    if (fileId) embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
-  } else if (url.includes('drive.google.com') && url.includes('/open?id=')) {
-    const fileId = new URL(url).searchParams.get('id');
-    if (fileId) embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
-  } else if (url.includes('docs.google.com/document') || url.includes('docs.google.com/spreadsheets') || url.includes('docs.google.com/presentation')) {
-    // Google Docs/Sheets/Slides - use /preview
+  let canEmbed = true;
+
+  // Google Drive file links → convert to preview
+  if (docType === 'google-drive') {
+    if (url.includes('/file/d/')) {
+      const fileId = url.match(/\/file\/d\/([^/]+)/)?.[1];
+      if (fileId) embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+    } else if (url.includes('/open?id=')) {
+      const fileId = new URL(url).searchParams.get('id');
+      if (fileId) embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+    }
+  }
+  // Google Docs/Sheets/Slides → convert to /preview
+  else if (docType === 'google-docs') {
     embedUrl = url.replace(/\/edit.*$/, '/preview');
-  } else if (url.endsWith('.pdf') || url.includes('.pdf?')) {
-    // PDFs - use Google Docs Viewer
-    const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
-    embedUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fullUrl)}&embedded=true`;
-  } else if (!url.startsWith('http')) {
-    // Local file - use Google Docs Viewer with full URL
-    const fullUrl = `${window.location.origin}${url}`;
-    embedUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fullUrl)}&embedded=true`;
+  }
+  // PDFs — embed directly in iframe (browsers render PDFs natively)
+  else if (docType === 'pdf') {
+    if (!url.startsWith('http')) {
+      embedUrl = `${window.location.origin}${url}`;
+    }
+  }
+  // Images — embed directly
+  else if (docType === 'image') {
+    if (!url.startsWith('http')) {
+      embedUrl = `${window.location.origin}${url}`;
+    }
+  }
+  // Videos — embed directly
+  else if (docType === 'video') {
+    if (!url.startsWith('http')) {
+      embedUrl = `${window.location.origin}${url}`;
+    }
+  }
+  // Other file types (Word, PPT, Excel, etc.) — cannot embed, open as link only
+  else {
+    if (!url.startsWith('http')) {
+      embedUrl = `${window.location.origin}${url}`;
+    }
+    canEmbed = false;
   }
 
+  // For local uploaded files, the open link should point to the full URL
+  const openUrl = !url.startsWith('http') ? `${window.location.origin}${url}` : url;
+
   return (
-    <div className="mt-3 aspect-[3/4] rounded-xl overflow-hidden bg-muted border relative">
-      <iframe 
-        src={embedUrl} 
-        className="w-full h-full" 
-        title={title}
-        allow="autoplay; fullscreen"
-      />
+    <div className="mt-3 rounded-xl overflow-hidden bg-muted border relative">
+      {canEmbed ? (
+        <>
+          <div className="w-full" style={{ minHeight: docType === 'image' ? '200px' : '500px', maxHeight: '70vh' }}>
+            <iframe
+              src={embedUrl}
+              className="w-full rounded-xl"
+              style={{ minHeight: docType === 'image' ? '200px' : '500px', height: '70vh' }}
+              title={title}
+              allow="autoplay; fullscreen"
+            />
+          </div>
+          <div className="px-3 py-2 bg-muted/50 border-t flex items-center gap-2">
+            <p className="text-[10px] text-muted-foreground flex-1 truncate">{title}</p>
+            <a href={openUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-emerald-600 hover:underline font-medium">
+              Abrir en nueva pestaña
+            </a>
+          </div>
+        </>
+      ) : (
+        <div className="p-6 text-center space-y-3">
+          <FileText className="h-12 w-12 text-muted-foreground mx-auto" />
+          <p className="text-sm text-muted-foreground">
+            Este tipo de archivo no se puede previsualizar aquí.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Haz clic en "Abrir" para ver el documento en una nueva pestaña.
+          </p>
+          <a href={openUrl} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm rounded-xl transition-colors">
+            <ExternalLink className="h-4 w-4" /> Abrir documento
+          </a>
+        </div>
+      )}
     </div>
   );
 }
