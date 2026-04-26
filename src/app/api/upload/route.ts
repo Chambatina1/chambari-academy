@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
+import { existsSync } from 'fs'
 import crypto from 'crypto'
 
 // Allowed file extensions for documents and media
@@ -19,6 +20,15 @@ const ALLOWED_EXTENSIONS = [
 ]
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+
+// Use persistent storage path - /data is a writable persistent disk on Render
+// Falls back to process cwd for local dev
+function getUploadDir() {
+  if (existsSync('/data')) {
+    return '/data/uploads'
+  }
+  return join(process.cwd(), 'uploads')
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,7 +49,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'El archivo excede el límite de 50MB' }, { status: 400 })
     }
 
-    // Validate by file extension (more reliable than MIME type)
+    // Validate by file extension
     const fileName = file.name || 'archivo'
     const ext = fileName.split('.').pop()?.toLowerCase() || ''
     
@@ -49,23 +59,18 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Also check MIME type for basic validation
-    if (file.type && file.type.startsWith('application/x-') || file.type === 'application/octet-stream') {
-      // Allow generic binary types as long as extension is valid
-    }
-
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
     const uniqueName = `${crypto.randomUUID()}.${ext}`
-
-    const uploadDir = join(process.cwd(), 'public', 'uploads')
+    const uploadDir = getUploadDir()
     await mkdir(uploadDir, { recursive: true })
 
     const filePath = join(uploadDir, uniqueName)
     await writeFile(filePath, buffer)
 
-    const url = `/uploads/${uniqueName}`
+    // Return URL using /api/files/ endpoint for serving
+    const url = `/api/files/${uniqueName}`
 
     return NextResponse.json({ url, name: fileName, size: file.size, type: file.type, ext })
   } catch (error) {

@@ -1279,7 +1279,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
                   }} className="rounded-xl" />
                 </div>
                 {documentUrl && (
-                  <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-emerald-600 hover:underline flex items-center gap-1"><FileText className="h-3 w-3" /> Ver documento actual{documentName ? ": " + documentName : ""}</a>
+                  <a href={normalizeFileUrl(documentUrl)} target="_blank" rel="noopener noreferrer" className="text-sm text-emerald-600 hover:underline flex items-center gap-1"><FileText className="h-3 w-3" /> Ver documento actual{documentName ? ": " + documentName : ""}</a>
                 )}
               </div>
 
@@ -2104,7 +2104,7 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
                         <FileText className="h-8 w-8 text-amber-600" />
                         <div className="flex-1 min-w-0"><p className="font-medium text-sm truncate">{selectedLesson.documentName || "Documento principal"}</p></div>
-                        <Button size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" asChild><a href={selectedLesson.documentUrl} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
+                        <Button size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" asChild><a href={normalizeFileUrl(selectedLesson.documentUrl)} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
                       </div>
                       {renderDocumentViewer(selectedLesson.documentUrl, selectedLesson.documentName || "Documento")}
                     </CardContent>
@@ -2724,6 +2724,16 @@ function LessonContentRenderer({ content }: { content: string }) {
 
 // ── Document Viewer Helper ──────────────────────────────────
 // Handles PDFs, Google Docs, Google Drive, and any URL
+
+// Normalize old /uploads/ URLs to new /api/files/ endpoint
+function normalizeFileUrl(url: string): string {
+  if (!url) return url;
+  if (url.startsWith('/uploads/')) {
+    return url.replace('/uploads/', '/api/files/');
+  }
+  return url;
+}
+
 function getDocumentType(url: string): 'pdf' | 'google-drive' | 'google-docs' | 'image' | 'video' | 'other' {
   if (!url) return 'other';
   const lower = url.toLowerCase();
@@ -2735,9 +2745,11 @@ function getDocumentType(url: string): 'pdf' | 'google-drive' | 'google-docs' | 
   return 'other';
 }
 
-function renderDocumentViewer(url: string, title: string) {
-  if (!url) return null;
+function renderDocumentViewer(rawUrl: string, title: string) {
+  if (!rawUrl) return null;
 
+  // Normalize old /uploads/ URLs to /api/files/
+  const url = normalizeFileUrl(rawUrl);
   const docType = getDocumentType(url);
   let embedUrl = url;
   let canEmbed = true;
@@ -3036,7 +3048,7 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                           <p className="text-[10px] text-muted-foreground truncate">{lesson.documentUrl}</p>
                         </div>
                         <Button size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" asChild>
-                          <a href={lesson.documentUrl} target="_blank" rel="noopener noreferrer">
+                          <a href={normalizeFileUrl(lesson.documentUrl)} target="_blank" rel="noopener noreferrer">
                             <Download className="h-4 w-4 mr-1" /> Abrir
                           </a>
                         </Button>
