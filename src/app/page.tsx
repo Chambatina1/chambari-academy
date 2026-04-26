@@ -254,7 +254,7 @@ export default function ChambariAcademy() {
       const params = query ? `?q=${encodeURIComponent(query)}` : "";
       const data = await api<PhoneticEntry[]>(`/api/phonetic${params}`);
       setPhoneticEntries(data);
-    } catch { toast.error("Error al cargar diccionario"); }
+    } catch { setPhoneticEntries([]); }
   }, []);
 
   const fetchExercises = useCallback(async (lessonId: string) => {
