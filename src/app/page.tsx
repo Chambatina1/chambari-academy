@@ -316,8 +316,8 @@ export default function ChambariAcademy() {
     return (
       <div className="min-h-screen flex items-center justify-center warm-gradient">
         <div className="flex flex-col items-center gap-4">
-          <GraduationCap className="h-16 w-16 text-emerald-600 animate-bounce" />
-          <p className="text-lg font-medium text-emerald-800">Cargando Chambari Academy...</p>
+          <GraduationCap className="h-16 w-16 text-amber-600 animate-bounce" />
+          <p className="text-lg font-medium text-amber-800">Cargando Chambari Academy...</p>
         </div>
       </div>
     );
@@ -332,14 +332,14 @@ export default function ChambariAcademy() {
         {/* Header */}
         <header className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded-xl bg-emerald-600 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-xl bg-amber-600 flex items-center justify-center">
               <GraduationCap className="h-6 w-6 text-white" />
             </div>
-            <span className="text-xl font-bold text-emerald-800">Chambari</span>
+            <span className="text-xl font-bold text-amber-800">Chambari</span>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="rounded-xl" onClick={() => setView("login")}>Iniciar Sesión</Button>
-            <Button className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setView("register")}>Registrarse</Button>
+            <Button className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white" onClick={() => setView("register")}>Registrarse</Button>
           </div>
         </header>
 
@@ -349,27 +349,27 @@ export default function ChambariAcademy() {
             {/* Decorative elements */}
             <div className="relative mb-8 flex items-center justify-center">
               <div className="absolute -top-8 -left-8 h-24 w-24 rounded-full bg-amber-200/60 blur-xl" />
-              <div className="absolute -bottom-4 -right-8 h-32 w-32 rounded-full bg-emerald-200/60 blur-xl" />
-              <div className="relative h-28 w-28 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center shadow-xl">
+              <div className="absolute -bottom-4 -right-8 h-32 w-32 rounded-full bg-amber-100/60 blur-xl" />
+              <div className="relative h-28 w-28 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-xl">
                 <GraduationCap className="h-14 w-14 text-white" />
               </div>
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-extrabold text-emerald-900 mb-4 leading-tight">
+            <h1 className="text-4xl md:text-6xl font-extrabold text-stone-700 mb-4 leading-tight">
               Chambari Academy
             </h1>
-            <p className="text-xl md:text-2xl text-emerald-700/80 mb-2 font-medium">
+            <p className="text-xl md:text-2xl text-amber-700/80 mb-2 font-medium">
               Aprende inglés con el método Sinapsis
             </p>
-            <p className="text-base text-emerald-600/60 mb-10 max-w-lg mx-auto">
+            <p className="text-base text-amber-600/60 mb-10 max-w-lg mx-auto">
               50 clases estructuradas, ejercicios interactivos, diccionario fonético y seguimiento personalizado.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button size="lg" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-8 h-13 text-lg" onClick={() => setView("register")}>
+              <Button size="lg" className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-8 h-13 text-lg" onClick={() => setView("register")}>
                 Comenzar Ahora <ChevronRight className="ml-1 h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline" className="rounded-xl border-emerald-300 text-emerald-700 px-8 h-13 text-lg" onClick={() => setView("login")}>
+              <Button size="lg" variant="outline" className="rounded-xl border-amber-200 text-amber-700 px-8 h-13 text-lg" onClick={() => setView("login")}>
                 Soy Profesor
               </Button>
             </div>
@@ -382,13 +382,13 @@ export default function ChambariAcademy() {
               { icon: Brain, title: "Ejercicios AI", desc: "Generados automáticamente por IA" },
               { icon: BookOpen, title: "Diccionario Fonético", desc: "Aprende la pronunciación correcta" },
             ].map((f) => (
-              <Card key={f.title} className="rounded-xl border-emerald-200/50 bg-white/60 backdrop-blur-sm">
+              <Card key={f.title} className="rounded-xl border-amber-100/50 bg-white/60 backdrop-blur-sm">
                 <CardContent className="p-5 flex flex-col items-center text-center gap-2">
-                  <div className="h-12 w-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-                    <f.icon className="h-6 w-6 text-emerald-600" />
+                  <div className="h-12 w-12 rounded-xl bg-orange-50 flex items-center justify-center">
+                    <f.icon className="h-6 w-6 text-amber-600" />
                   </div>
-                  <h3 className="font-semibold text-emerald-800">{f.title}</h3>
-                  <p className="text-sm text-emerald-600/70">{f.desc}</p>
+                  <h3 className="font-semibold text-amber-800">{f.title}</h3>
+                  <p className="text-sm text-amber-600/70">{f.desc}</p>
                 </CardContent>
               </Card>
             ))}
@@ -396,7 +396,7 @@ export default function ChambariAcademy() {
         </main>
 
         {/* Footer */}
-        <footer className="p-4 text-center text-sm text-emerald-600/50">
+        <footer className="p-4 text-center text-sm text-amber-600/50">
           © 2024 Chambari Academy — Método Sinapsis
         </footer>
       </div>
@@ -424,19 +424,19 @@ export default function ChambariAcademy() {
     return (
       <div className="min-h-screen flex bg-background">
         {/* Sidebar - Desktop */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-white border-r border-emerald-100 p-4 gap-1">
+        <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-white border-r border-orange-50 p-4 gap-1">
           <div className="flex items-center gap-2 mb-6 px-2">
-            <div className="h-9 w-9 rounded-xl bg-emerald-600 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-xl bg-amber-600 flex items-center justify-center">
               <GraduationCap className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-emerald-800">Chambari</span>
+            <span className="text-lg font-bold text-amber-800">Chambari</span>
           </div>
           <TeacherSidebarNav currentView={teacherView} onNavigate={setTeacherView} />
           <div className="mt-auto">
             <Separator className="my-3" />
             <div className="px-2 flex items-center gap-3">
-              <Avatar className="h-8 w-8 bg-emerald-100">
-                <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs">{user.name.charAt(0)}</AvatarFallback>
+              <Avatar className="h-8 w-8 bg-orange-50">
+                <AvatarFallback className="bg-orange-50 text-amber-700 text-xs">{user.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{user.name}</p>
@@ -452,7 +452,7 @@ export default function ChambariAcademy() {
         {/* Main area */}
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Top bar - Mobile */}
-          <header className="lg:hidden flex items-center justify-between p-3 bg-white border-b border-emerald-100">
+          <header className="lg:hidden flex items-center justify-between p-3 bg-white border-b border-orange-50">
             <div className="flex items-center gap-2">
               <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <SheetTrigger asChild>
@@ -461,7 +461,7 @@ export default function ChambariAcademy() {
                 <SheetContent side="left" className="w-72 p-4">
                   <SheetHeader>
                     <SheetTitle className="flex items-center gap-2">
-                      <GraduationCap className="h-5 w-5 text-emerald-600" />
+                      <GraduationCap className="h-5 w-5 text-amber-600" />
                       Chambari Academy
                     </SheetTitle>
                   </SheetHeader>
@@ -476,10 +476,10 @@ export default function ChambariAcademy() {
                   </div>
                 </SheetContent>
               </Sheet>
-              <span className="font-semibold text-emerald-800">Chambari</span>
+              <span className="font-semibold text-amber-800">Chambari</span>
             </div>
-            <Avatar className="h-8 w-8 bg-emerald-100">
-              <AvatarFallback className="bg-emerald-100 text-emerald-700 text-xs">{user.name.charAt(0)}</AvatarFallback>
+            <Avatar className="h-8 w-8 bg-orange-50">
+              <AvatarFallback className="bg-orange-50 text-amber-700 text-xs">{user.name.charAt(0)}</AvatarFallback>
             </Avatar>
           </header>
 
@@ -508,15 +508,15 @@ export default function ChambariAcademy() {
     return (
       <div className="min-h-screen flex flex-col bg-background pb-16">
         {/* Top bar */}
-        <header className="flex items-center justify-between p-3 bg-white border-b border-emerald-100">
+        <header className="flex items-center justify-between p-3 bg-white border-b border-orange-50">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-lg bg-amber-600 flex items-center justify-center">
               <GraduationCap className="h-4 w-4 text-white" />
             </div>
-            <span className="font-semibold text-emerald-800">Chambari</span>
+            <span className="font-semibold text-amber-800">Chambari</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-emerald-700 hidden sm:inline">{user.name}</span>
+            <span className="text-sm text-amber-700 hidden sm:inline">{user.name}</span>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout}>
               <LogOut className="h-4 w-4" />
             </Button>
@@ -533,17 +533,17 @@ export default function ChambariAcademy() {
         </main>
 
         {/* Bottom Nav */}
-        <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-emerald-100 flex justify-around items-center h-16 z-50 safe-area-inset-bottom">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-orange-50 flex justify-around items-center h-16 z-50 safe-area-inset-bottom">
           {[
             { icon: BookOpen, label: "Clases", view: "dashboard" as StudentView },
             { icon: Book, label: "Diccionario", view: "dictionary" as StudentView },
             { icon: BarChart3, label: "Progreso", view: "progress" as StudentView },
           ].map((item) => (
-            <button key={item.view} onClick={() => setStudentView(item.view)} className={`flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-200 ${studentView === item.view ? "text-emerald-600 bg-emerald-50" : "text-muted-foreground hover:text-emerald-500"}`}>
-              <div className={`p-1.5 rounded-lg transition-all duration-200 ${studentView === item.view ? "bg-emerald-600 text-white shadow-md shadow-emerald-200" : ""}`}>
+            <button key={item.view} onClick={() => setStudentView(item.view)} className={`flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-200 ${studentView === item.view ? "text-amber-600 bg-amber-50" : "text-muted-foreground hover:text-amber-500"}`}>
+              <div className={`p-1.5 rounded-lg transition-all duration-200 ${studentView === item.view ? "bg-amber-600 text-white shadow-md shadow-amber-100" : ""}`}>
                 <item.icon className="h-4 w-4" />
               </div>
-              <span className={`text-[10px] font-medium transition-all ${studentView === item.view ? "text-emerald-700 font-semibold" : ""}`}>{item.label}</span>
+              <span className={`text-xs font-medium transition-all ${studentView === item.view ? "text-amber-700 font-semibold" : ""}`}>{item.label}</span>
             </button>
           ))}
         </nav>
@@ -574,12 +574,12 @@ function LoginPage({ onLogin, onGoRegister, onGoBack }: { onLogin: (e: string, p
   return (
     <div className="min-h-screen flex items-center justify-center warm-gradient px-4">
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md">
-        <Card className="rounded-2xl border-emerald-200/50 bg-white/80 backdrop-blur-sm shadow-lg">
+        <Card className="rounded-2xl border-amber-100/50 bg-white/80 backdrop-blur-sm shadow-lg">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto h-14 w-14 rounded-2xl bg-emerald-600 flex items-center justify-center mb-3">
+            <div className="mx-auto h-14 w-14 rounded-2xl bg-amber-600 flex items-center justify-center mb-3">
               <GraduationCap className="h-8 w-8 text-white" />
             </div>
-            <CardTitle className="text-2xl text-emerald-900">Iniciar Sesión</CardTitle>
+            <CardTitle className="text-2xl text-stone-700">Iniciar Sesión</CardTitle>
             <CardDescription>Accede a tu cuenta de Chambari Academy</CardDescription>
           </CardHeader>
           <CardContent>
@@ -596,13 +596,13 @@ function LoginPage({ onLogin, onGoRegister, onGoBack }: { onLogin: (e: string, p
                 <Checkbox id="teacher" checked={isTeacher} onCheckedChange={(v) => setIsTeacher(!!v)} />
                 <Label htmlFor="teacher" className="text-sm cursor-pointer">Soy Profesor</Label>
               </div>
-              <Button type="submit" className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-11" disabled={submitting}>
+              <Button type="submit" className="w-full rounded-xl bg-amber-600 hover:bg-amber-700 text-white h-11" disabled={submitting}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Iniciar Sesión
               </Button>
             </form>
             <div className="mt-4 text-center text-sm text-muted-foreground">
-              ¿No tienes cuenta? <button onClick={onGoRegister} className="text-emerald-600 font-medium hover:underline">Regístrate</button>
+              ¿No tienes cuenta? <button onClick={onGoRegister} className="text-amber-600 font-medium hover:underline">Regístrate</button>
             </div>
             <button onClick={onGoBack} className="mt-2 w-full text-center text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1">
               <ArrowLeft className="h-3 w-3" /> Volver al inicio
@@ -636,12 +636,12 @@ function RegisterPage({ onRegister, onGoLogin, onGoBack }: { onRegister: (n: str
   return (
     <div className="min-h-screen flex items-center justify-center warm-gradient px-4">
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md">
-        <Card className="rounded-2xl border-emerald-200/50 bg-white/80 backdrop-blur-sm shadow-lg">
+        <Card className="rounded-2xl border-amber-100/50 bg-white/80 backdrop-blur-sm shadow-lg">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto h-14 w-14 rounded-2xl bg-emerald-600 flex items-center justify-center mb-3">
+            <div className="mx-auto h-14 w-14 rounded-2xl bg-amber-600 flex items-center justify-center mb-3">
               <GraduationCap className="h-8 w-8 text-white" />
             </div>
-            <CardTitle className="text-2xl text-emerald-900">Crear Cuenta</CardTitle>
+            <CardTitle className="text-2xl text-stone-700">Crear Cuenta</CardTitle>
             <CardDescription>Únete a Chambari Academy</CardDescription>
           </CardHeader>
           <CardContent>
@@ -671,13 +671,13 @@ function RegisterPage({ onRegister, onGoLogin, onGoBack }: { onRegister: (n: str
                   </div>
                 </RadioGroup>
               </div>
-              <Button type="submit" className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-11" disabled={submitting}>
+              <Button type="submit" className="w-full rounded-xl bg-amber-600 hover:bg-amber-700 text-white h-11" disabled={submitting}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Crear Cuenta
               </Button>
             </form>
             <div className="mt-4 text-center text-sm text-muted-foreground">
-              ¿Ya tienes cuenta? <button onClick={onGoLogin} className="text-emerald-600 font-medium hover:underline">Inicia sesión</button>
+              ¿Ya tienes cuenta? <button onClick={onGoLogin} className="text-amber-600 font-medium hover:underline">Inicia sesión</button>
             </div>
             <button onClick={onGoBack} className="mt-2 w-full text-center text-sm text-muted-foreground hover:text-foreground flex items-center justify-center gap-1">
               <ArrowLeft className="h-3 w-3" /> Volver al inicio
@@ -709,7 +709,7 @@ function TeacherSidebarNav({ currentView, onNavigate }: { currentView: TeacherVi
         <button
           key={item.view}
           onClick={() => onNavigate(item.view)}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${currentView === item.view ? "bg-emerald-100 text-emerald-800" : "text-muted-foreground hover:bg-emerald-50 hover:text-emerald-700"}`}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${currentView === item.view ? "bg-orange-50 text-amber-800" : "text-muted-foreground hover:bg-amber-50 hover:text-amber-700"}`}
         >
           <item.icon className="h-4 w-4" />
           {item.label}
@@ -727,7 +727,7 @@ function TeacherDashboard({ modules, students, progressData, onNavigate }: { mod
   const avgProgress = progressData.length > 0 ? Math.round(progressData.reduce((acc, p) => acc + p.progressPercent, 0) / progressData.length) : 0;
 
   const stats = [
-    { icon: BookOpen, label: "Módulos", value: modules.length, color: "bg-emerald-100 text-emerald-700" },
+    { icon: BookOpen, label: "Módulos", value: modules.length, color: "bg-orange-50 text-amber-700" },
     { icon: FileText, label: "Lecciones", value: totalLessons, color: "bg-amber-100 text-amber-700" },
     { icon: Users, label: "Estudiantes", value: students.length, color: "bg-sky-100 text-sky-700" },
     { icon: BarChart3, label: "Progreso Prom.", value: `${avgProgress}%`, color: "bg-rose-100 text-rose-700" },
@@ -736,7 +736,7 @@ function TeacherDashboard({ modules, students, progressData, onNavigate }: { mod
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6 max-w-6xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-emerald-900">Panel del Profesor</h1>
+        <h1 className="text-2xl font-bold text-stone-700">Panel del Profesor</h1>
         <p className="text-muted-foreground">Bienvenido a tu aula virtual</p>
       </div>
 
@@ -761,11 +761,11 @@ function TeacherDashboard({ modules, students, progressData, onNavigate }: { mod
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card className="rounded-xl cursor-pointer hover:shadow-md transition-shadow" onClick={() => onNavigate("modules")}>
           <CardContent className="p-5 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-emerald-100 flex items-center justify-center">
-              <Plus className="h-6 w-6 text-emerald-600" />
+            <div className="h-12 w-12 rounded-xl bg-orange-50 flex items-center justify-center">
+              <Plus className="h-6 w-6 text-amber-600" />
             </div>
             <div>
-              <p className="font-semibold text-emerald-800">Crear Módulo</p>
+              <p className="font-semibold text-amber-800">Crear Módulo</p>
               <p className="text-sm text-muted-foreground">Agrega un nuevo módulo de contenido</p>
             </div>
           </CardContent>
@@ -776,7 +776,7 @@ function TeacherDashboard({ modules, students, progressData, onNavigate }: { mod
               <Sparkles className="h-6 w-6 text-amber-600" />
             </div>
             <div>
-              <p className="font-semibold text-emerald-800">Generar Ejercicios</p>
+              <p className="font-semibold text-amber-800">Generar Ejercicios</p>
               <p className="text-sm text-muted-foreground">Crea ejercicios con Inteligencia Artificial</p>
             </div>
           </CardContent>
@@ -794,17 +794,17 @@ function TeacherDashboard({ modules, students, progressData, onNavigate }: { mod
           ) : (
             <div className="space-y-3">
               {modules.slice(0, 5).map((m) => (
-                <div key={m.id} className="flex items-center justify-between p-3 rounded-xl bg-emerald-50/50 hover:bg-emerald-50">
+                <div key={m.id} className="flex items-center justify-between p-3 rounded-xl bg-amber-50/50 hover:bg-amber-50">
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg bg-emerald-100 flex items-center justify-center">
-                      <BookOpen className="h-4 w-4 text-emerald-600" />
+                    <div className="h-9 w-9 rounded-lg bg-orange-50 flex items-center justify-center">
+                      <BookOpen className="h-4 w-4 text-amber-600" />
                     </div>
                     <div>
                       <p className="font-medium text-sm">{m.title}</p>
                       <p className="text-xs text-muted-foreground">{m.lessons?.length || 0} lecciones</p>
                     </div>
                   </div>
-                  <Badge variant={m.status === "PUBLISHED" ? "default" : "secondary"} className={m.status === "PUBLISHED" ? "bg-emerald-600 text-white" : ""}>
+                  <Badge variant={m.status === "PUBLISHED" ? "default" : "secondary"} className={m.status === "PUBLISHED" ? "bg-amber-600 text-white" : ""}>
                     {m.status === "PUBLISHED" ? "Publicado" : m.status === "DRAFT" ? "Borrador" : "Archivado"}
                   </Badge>
                 </div>
@@ -905,12 +905,12 @@ function TeacherModules({ modules, students, onRefresh, onSelectModule, onSelect
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-emerald-900">Módulos</h1>
+          <h1 className="text-2xl font-bold text-stone-700">Módulos</h1>
           <p className="text-muted-foreground">Gestiona tus módulos y lecciones</p>
         </div>
         <Dialog open={showNewModule} onOpenChange={setShowNewModule}>
           <DialogTrigger asChild>
-            <Button className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white">
               <Plus className="h-4 w-4 mr-2" /> Nuevo Módulo
             </Button>
           </DialogTrigger>
@@ -931,7 +931,7 @@ function TeacherModules({ modules, students, onRefresh, onSelectModule, onSelect
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowNewModule(false)} className="rounded-xl">Cancelar</Button>
-              <Button onClick={createModule} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">Crear</Button>
+              <Button onClick={createModule} className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white">Crear</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -940,9 +940,9 @@ function TeacherModules({ modules, students, onRefresh, onSelectModule, onSelect
       {modules.length === 0 ? (
         <Card className="rounded-xl">
           <CardContent className="py-12 text-center">
-            <BookOpen className="h-12 w-12 mx-auto text-emerald-300 mb-3" />
+            <BookOpen className="h-12 w-12 mx-auto text-amber-200 mb-3" />
             <p className="text-muted-foreground">No hay módulos todavía</p>
-            <Button className="mt-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setShowNewModule(true)}>
+            <Button className="mt-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white" onClick={() => setShowNewModule(true)}>
               <Plus className="h-4 w-4 mr-2" /> Crear Primer Módulo
             </Button>
           </CardContent>
@@ -952,12 +952,12 @@ function TeacherModules({ modules, students, onRefresh, onSelectModule, onSelect
           {modules.map((mod) => (
             <Card key={mod.id} className="rounded-xl overflow-hidden">
               <div
-                className="p-4 flex items-center justify-between cursor-pointer hover:bg-emerald-50/50 transition-colors"
+                className="p-4 flex items-center justify-between cursor-pointer hover:bg-amber-50/50 transition-colors"
                 onClick={() => toggleModule(mod)}
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                    <BookOpen className="h-5 w-5 text-emerald-600" />
+                  <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center">
+                    <BookOpen className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
                     <p className="font-semibold">{mod.title}</p>
@@ -969,9 +969,9 @@ function TeacherModules({ modules, students, onRefresh, onSelectModule, onSelect
                     checked={mod.status === "PUBLISHED"}
                     disabled={toggleLoading === mod.id}
                     onCheckedChange={() => toggleModulePublish(mod)}
-                    className="data-[state=checked]:bg-emerald-600"
+                    className="data-[state=checked]:bg-amber-600"
                   />
-                  <Badge variant={mod.status === "PUBLISHED" ? "default" : "secondary"} className={mod.status === "PUBLISHED" ? "bg-emerald-600 text-white" : ""}>
+                  <Badge variant={mod.status === "PUBLISHED" ? "default" : "secondary"} className={mod.status === "PUBLISHED" ? "bg-amber-600 text-white" : ""}>
                     {mod.status === "PUBLISHED" ? "Publicado" : mod.status === "DRAFT" ? "Borrador" : "Archivado"}
                   </Badge>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); deleteModule(mod.id); }}>
@@ -981,10 +981,10 @@ function TeacherModules({ modules, students, onRefresh, onSelectModule, onSelect
                 </div>
               </div>
               {expandedModule === mod.id && (
-                <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="border-t border-emerald-100">
+                <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="border-t border-orange-50">
                   <div className="p-4 space-y-2">
                     {(moduleLessons[mod.id] || []).map((lesson) => (
-                      <div key={lesson.id} className="flex items-center justify-between p-3 rounded-xl bg-white border border-emerald-100">
+                      <div key={lesson.id} className="flex items-center justify-between p-3 rounded-xl bg-white border border-orange-50">
                         <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => onSelectLesson(lesson, mod)}>
                           <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center text-sm font-bold text-amber-700">
                             {lesson.orderIndex + 1}
@@ -995,13 +995,13 @@ function TeacherModules({ modules, students, onRefresh, onSelectModule, onSelect
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Badge variant={lesson.status === "PUBLISHED" ? "default" : "secondary"} className={lesson.status === "PUBLISHED" ? "bg-emerald-600 text-white text-[10px]" : "text-[10px]"}>
+                          <Badge variant={lesson.status === "PUBLISHED" ? "default" : "secondary"} className={lesson.status === "PUBLISHED" ? "bg-amber-600 text-white text-xs" : "text-xs"}>
                             {lesson.status === "PUBLISHED" ? "Publicado" : "Borrador"}
                           </Badge>
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className={`h-7 w-7 ${lesson.status === 'PUBLISHED' ? 'text-emerald-600 hover:text-red-500' : 'text-gray-400 hover:text-emerald-500'}`} 
+                            className={`h-7 w-7 ${lesson.status === 'PUBLISHED' ? 'text-amber-600 hover:text-red-500' : 'text-gray-400 hover:text-amber-500'}`} 
                             onClick={() => togglePublish(lesson.id, mod.id)}
                             title={lesson.status === 'PUBLISHED' ? 'Desactivar clase' : 'Publicar clase'}
                           >
@@ -1199,7 +1199,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-emerald-900">{lesson ? "Editar Lección" : "Nueva Lección"}</h1>
+          <h1 className="text-2xl font-bold text-stone-700">{lesson ? "Editar Lección" : "Nueva Lección"}</h1>
           <p className="text-muted-foreground">{module?.title || ""}</p>
         </div>
       </div>
@@ -1246,26 +1246,26 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
                     />
                   </div>
                 )}
-                <p className="text-[10px] text-muted-foreground">Pega un enlace de YouTube. Se guardara automaticamente al guardar la leccion.</p>
+                <p className="text-xs text-muted-foreground">Pega un enlace de YouTube. Se guardara automaticamente al guardar la leccion.</p>
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-2"><Video className="h-4 w-4 text-blue-500" /> URL de Video Directo</Label>
                 <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://...mp4" className="rounded-xl" />
-                <p className="text-[10px] text-muted-foreground">Enlace a un archivo de video MP4/WebM</p>
+                <p className="text-xs text-muted-foreground">Enlace a un archivo de video MP4/WebM</p>
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-2"><Music className="h-4 w-4 text-pink-500" /> URL de TikTok</Label>
                 <Input value={tiktokUrl} onChange={(e) => setTiktokUrl(e.target.value)} placeholder="https://www.tiktok.com/@usuario/video/123456" className="rounded-xl" />
-                <p className="text-[10px] text-muted-foreground">Pega el enlace de un video de TikTok para embeberlo en la clase</p>
+                <p className="text-xs text-muted-foreground">Pega el enlace de un video de TikTok para embeberlo en la clase</p>
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-2"><FileText className="h-4 w-4 text-amber-500" /> Documento</Label>
                 <div className="space-y-2">
                   <Input value={documentLinkInput} onChange={(e) => setDocumentLinkInput(e.target.value)} placeholder="https://drive.google.com/... o https://ejemplo.com/documento.pdf" className="rounded-xl" />
-                  <p className="text-[10px] text-muted-foreground">O pega un enlace a un documento (Google Drive, PDF, etc.)</p>
+                  <p className="text-xs text-muted-foreground">O pega un enlace a un documento (Google Drive, PDF, etc.)</p>
                   <div className="flex items-center gap-3">
                     <div className="flex-1 h-px bg-border" />
-                    <span className="text-[10px] text-muted-foreground">o sube un archivo</span>
+                    <span className="text-xs text-muted-foreground">o sube un archivo</span>
                     <div className="flex-1 h-px bg-border" />
                   </div>
                   <Input type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.png" onChange={(e) => {
@@ -1279,7 +1279,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
                   }} className="rounded-xl" />
                 </div>
                 {documentUrl && (
-                  <a href={normalizeFileUrl(documentUrl)} target="_blank" rel="noopener noreferrer" className="text-sm text-emerald-600 hover:underline flex items-center gap-1"><FileText className="h-3 w-3" /> Ver documento actual{documentName ? ": " + documentName : ""}</a>
+                  <a href={normalizeFileUrl(documentUrl)} target="_blank" rel="noopener noreferrer" className="text-sm text-amber-600 hover:underline flex items-center gap-1"><FileText className="h-3 w-3" /> Ver documento actual{documentName ? ": " + documentName : ""}</a>
                 )}
               </div>
 
@@ -1297,7 +1297,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <h3 className="font-semibold text-sm">Ejercicios Existentes ({existingExercises.length})</h3>
-                        <Button variant="destructive" size="sm" className="rounded-xl text-[11px] h-7" onClick={async () => {
+                        <Button variant="destructive" size="sm" className="rounded-xl text-sm h-7" onClick={async () => {
                           try { await api(`/api/exercises/${lesson.id}`, { method: "DELETE" }); setExistingExercises([]); toast.success('Todos los ejercicios eliminados'); } catch { toast.error('Error'); }
                         }}>
                           <Trash2 className="h-3 w-3 mr-1" /> Eliminar todos
@@ -1306,11 +1306,11 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
                       <ScrollArea className="max-h-60">
                         <div className="space-y-2 pr-4">
                           {existingExercises.map((ex) => (
-                            <div key={ex.id} className="p-3 rounded-xl bg-white border border-emerald-100 flex items-start gap-2">
+                            <div key={ex.id} className="p-3 rounded-xl bg-white border border-orange-50 flex items-start gap-2">
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium">{ex.question}</p>
                                 {ex.options && <p className="text-xs text-muted-foreground mt-1">{ex.options}</p>}
-                                <p className="text-xs text-emerald-600 mt-1">✓ {ex.correctAnswer}</p>
+                                <p className="text-xs text-amber-600 mt-1">✓ {ex.correctAnswer}</p>
                                 {ex.explanation && <p className="text-xs text-muted-foreground mt-1 italic">{ex.explanation}</p>}
                               </div>
                               <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-red-400 hover:text-red-600" onClick={() => deleteExercise(ex.id)}>
@@ -1371,7 +1371,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
                         <Label className="text-xs">Explicación (opcional)</Label>
                         <Input value={newExercise.explanation} onChange={(e) => setNewExercise({ ...newExercise, explanation: e.target.value })} placeholder="¿Por qué es esta la respuesta correcta?" className="rounded-xl text-sm" />
                       </div>
-                      <Button onClick={addManualExercise} className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm">
+                      <Button onClick={addManualExercise} className="w-full rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm">
                         <Save className="h-4 w-4 mr-2" /> Guardar Ejercicio
                       </Button>
                     </div>
@@ -1416,7 +1416,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
                             <div key={i} className="p-3 rounded-xl bg-amber-50 border border-amber-200">
                               <p className="text-sm font-medium">{ex.question}</p>
                               {ex.options && <p className="text-xs text-muted-foreground mt-1">{ex.options}</p>}
-                              <p className="text-xs text-emerald-600 mt-1">✓ {ex.correctAnswer}</p>
+                              <p className="text-xs text-amber-600 mt-1">✓ {ex.correctAnswer}</p>
                             </div>
                           ))}
                         </div>
@@ -1483,26 +1483,26 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
                       const grant = lesson ? accessGrants.find((a) => a.lessonId === lesson.id && a.studentId === s.id) : undefined;
                       const isLoading = toggleLoading === s.id;
                       return (
-                        <div key={s.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${hasAccess ? "border-emerald-200 bg-emerald-50/50" : "border-gray-100 bg-white"}`}>
-                          <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${hasAccess ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-400"}`}>
+                        <div key={s.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${hasAccess ? "border-amber-100 bg-amber-50/50" : "border-gray-100 bg-white"}`}>
+                          <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${hasAccess ? "bg-amber-600 text-white" : "bg-gray-100 text-gray-400"}`}>
                             {s.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{s.name}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">{s.email}</p>
+                            <p className="text-xs text-muted-foreground truncate">{s.email}</p>
                           </div>
                           {lesson ? (
                             <Button
                               size="sm"
                               variant={hasAccess ? "default" : "outline"}
-                              className={`rounded-xl text-[11px] ${hasAccess ? "bg-emerald-600 hover:bg-red-500 text-white" : "hover:bg-emerald-50"}`}
+                              className={`rounded-xl text-sm ${hasAccess ? "bg-amber-600 hover:bg-red-500 text-white" : "hover:bg-amber-50"}`}
                               disabled={isLoading}
                               onClick={() => toggleStudentAccess(s.id, grant?.id)}
                             >
                               {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : hasAccess ? <><Lock className="h-3 w-3 mr-1" /> Bloquear</> : <><Unlock className="h-3 w-3 mr-1" /> Liberar</>}
                             </Button>
                           ) : (
-                            <Badge variant="secondary" className="text-[10px]">Guarda primero</Badge>
+                            <Badge variant="secondary" className="text-xs">Guarda primero</Badge>
                           )}
                         </div>
                       );
@@ -1517,7 +1517,7 @@ function TeacherLessonEditor({ module, lesson, students, accessGrants, onSave, o
 
       <div className="flex gap-3">
         <Button variant="outline" onClick={onBack} className="rounded-xl">Cancelar</Button>
-        <Button onClick={saveLesson} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" disabled={saving}>
+        <Button onClick={saveLesson} className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white" disabled={saving}>
           {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
           Guardar Lección
         </Button>
@@ -1543,7 +1543,7 @@ function TeacherStudents({ students, progressData, onRefresh }: { students: User
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6 max-w-5xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-emerald-900">Estudiantes</h1>
+        <h1 className="text-2xl font-bold text-stone-700">Estudiantes</h1>
         <p className="text-muted-foreground">{students.length} estudiantes registrados</p>
       </div>
 
@@ -1596,8 +1596,8 @@ function TeacherStudents({ students, progressData, onRefresh }: { students: User
             <Card key={s.id} className="rounded-xl">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <Avatar className="h-10 w-10 bg-emerald-100">
-                    <AvatarFallback className="bg-emerald-100 text-emerald-700">{s.name.charAt(0)}</AvatarFallback>
+                  <Avatar className="h-10 w-10 bg-orange-50">
+                    <AvatarFallback className="bg-orange-50 text-amber-700">{s.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <p className="font-semibold text-sm">{s.name}</p>
@@ -1617,7 +1617,7 @@ function TeacherStudents({ students, progressData, onRefresh }: { students: User
 
       {filtered.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          <Users className="h-10 w-10 mx-auto mb-2 text-emerald-300" />
+          <Users className="h-10 w-10 mx-auto mb-2 text-amber-200" />
           <p>No se encontraron estudiantes</p>
         </div>
       )}
@@ -1673,7 +1673,7 @@ function TeacherExercises({ modules }: { modules: Module[] }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-emerald-900">Ejercicios IA</h1>
+        <h1 className="text-2xl font-bold text-stone-700">Ejercicios IA</h1>
         <p className="text-muted-foreground">Genera ejercicios automáticamente con Inteligencia Artificial</p>
       </div>
 
@@ -1728,15 +1728,15 @@ function TeacherExercises({ modules }: { modules: Module[] }) {
             <ScrollArea className="max-h-[500px]">
               <div className="space-y-3 pr-4">
                 {exercises.map((ex, i) => (
-                  <div key={i} className="p-4 rounded-xl bg-white border border-emerald-100">
+                  <div key={i} className="p-4 rounded-xl bg-white border border-orange-50">
                     <div className="flex items-start gap-2">
-                      <span className="text-sm font-bold text-emerald-600 bg-emerald-100 rounded-full h-6 w-6 flex items-center justify-center shrink-0">{i + 1}</span>
+                      <span className="text-sm font-bold text-amber-600 bg-orange-50 rounded-full h-6 w-6 flex items-center justify-center shrink-0">{i + 1}</span>
                       <div className="flex-1">
                         <p className="font-medium text-sm">{ex.question}</p>
                         {ex.options && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{ex.options}</p>}
                         <div className="mt-2 flex items-center gap-2">
-                          <Badge className="bg-emerald-100 text-emerald-700 text-[10px]">✓ {ex.correctAnswer}</Badge>
-                          <Badge variant="outline" className="text-[10px]">{ex.type}</Badge>
+                          <Badge className="bg-orange-50 text-amber-700 text-xs">✓ {ex.correctAnswer}</Badge>
+                          <Badge variant="outline" className="text-xs">{ex.type}</Badge>
                         </div>
                         {ex.explanation && <p className="text-xs text-muted-foreground mt-2 italic">💡 {ex.explanation}</p>}
                       </div>
@@ -1764,7 +1764,7 @@ function TeacherProgress({ students, progressData, onRefresh }: { students: User
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-emerald-900">Progreso</h1>
+          <h1 className="text-2xl font-bold text-stone-700">Progreso</h1>
           <p className="text-muted-foreground">Seguimiento de estudiantes</p>
         </div>
         <Button variant="outline" className="rounded-xl" onClick={onRefresh}>
@@ -1781,8 +1781,8 @@ function TeacherProgress({ students, progressData, onRefresh }: { students: User
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 bg-emerald-100">
-                      <AvatarFallback className="bg-emerald-100 text-emerald-700">{s.name.charAt(0)}</AvatarFallback>
+                    <Avatar className="h-10 w-10 bg-orange-50">
+                      <AvatarFallback className="bg-orange-50 text-amber-700">{s.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-semibold">{s.name}</p>
@@ -1790,7 +1790,7 @@ function TeacherProgress({ students, progressData, onRefresh }: { students: User
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-emerald-600">{avg}%</p>
+                    <p className="text-2xl font-bold text-amber-600">{avg}%</p>
                     <p className="text-xs text-muted-foreground">promedio</p>
                   </div>
                 </div>
@@ -1802,7 +1802,7 @@ function TeacherProgress({ students, progressData, onRefresh }: { students: User
                         <Progress value={p.progressPercent} className="h-2 flex-1" />
                         <div className="flex items-center gap-1">
                           <span className="text-xs w-8 text-right">{p.progressPercent}%</span>
-                          {p.completed && <CheckCircle className="h-3 w-3 text-emerald-600" />}
+                          {p.completed && <CheckCircle className="h-3 w-3 text-amber-600" />}
                         </div>
                       </div>
                     ))}
@@ -1817,7 +1817,7 @@ function TeacherProgress({ students, progressData, onRefresh }: { students: User
 
       {students.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          <BarChart3 className="h-10 w-10 mx-auto mb-2 text-emerald-300" />
+          <BarChart3 className="h-10 w-10 mx-auto mb-2 text-amber-200" />
           <p>No hay estudiantes para mostrar</p>
         </div>
       )}
@@ -1860,10 +1860,10 @@ function PhoneticDictionary({ entries, onRefresh, onSearch }: { entries: Phoneti
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-emerald-900">Diccionario Fonético</h1>
+          <h1 className="text-2xl font-bold text-stone-700">Diccionario Fonético</h1>
           <p className="text-muted-foreground">{entries.length} entradas</p>
         </div>
-        <Button className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setShowAdd(true)}>
+        <Button className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white" onClick={() => setShowAdd(true)}>
           <Plus className="h-4 w-4 mr-2" /> Agregar
         </Button>
       </div>
@@ -1883,11 +1883,11 @@ function PhoneticDictionary({ entries, onRefresh, onSearch }: { entries: Phoneti
                 </div>
                 <div className="flex-1">
                   <div className="flex items-baseline gap-3 flex-wrap">
-                    <span className="text-lg font-bold text-emerald-900">{entry.word}</span>
+                    <span className="text-lg font-bold text-stone-700">{entry.word}</span>
                     <span className="text-sm text-amber-600 font-mono">/{entry.ipa}/</span>
                     {entry.phoneticSpelling && <span className="text-xs text-muted-foreground">[{entry.phoneticSpelling}]</span>}
                   </div>
-                  {entry.example && <p className="text-sm text-emerald-700 mt-1 italic">"{entry.example}"</p>}
+                  {entry.example && <p className="text-sm text-amber-700 mt-1 italic">"{entry.example}"</p>}
                   {entry.translation && <p className="text-sm text-muted-foreground mt-0.5">{entry.translation}</p>}
                 </div>
               </div>
@@ -1898,7 +1898,7 @@ function PhoneticDictionary({ entries, onRefresh, onSearch }: { entries: Phoneti
 
       {entries.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          <Book className="h-10 w-10 mx-auto mb-2 text-emerald-300" />
+          <Book className="h-10 w-10 mx-auto mb-2 text-amber-200" />
           <p>No se encontraron entradas</p>
         </div>
       )}
@@ -1921,7 +1921,7 @@ function PhoneticDictionary({ entries, onRefresh, onSearch }: { entries: Phoneti
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAdd(false)} className="rounded-xl">Cancelar</Button>
-            <Button onClick={addEntry} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">Guardar</Button>
+            <Button onClick={addEntry} className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white">Guardar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1995,40 +1995,40 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
     // Teacher viewing a lesson — same as student view
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-0">
-        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-emerald-100 px-4 pt-3 pb-2.5">
+        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-orange-50 px-4 pt-3 pb-2.5">
           <div className="flex items-center gap-3 mb-2">
-            <Button variant="ghost" size="icon" onClick={() => setSelectedLesson(null)} className="rounded-xl h-8 w-8 shrink-0 hover:bg-emerald-50">
+            <Button variant="ghost" size="icon" onClick={() => setSelectedLesson(null)} className="rounded-xl h-8 w-8 shrink-0 hover:bg-amber-50">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="flex-1 min-w-0">
-              <h2 className="font-bold text-sm truncate text-emerald-900">{selectedLesson.title}</h2>
-              <p className="text-[10px] text-muted-foreground truncate">{selectedLesson.description}</p>
+              <h2 className="font-bold text-sm truncate text-stone-700">{selectedLesson.title}</h2>
+              <p className="text-xs text-muted-foreground truncate">{selectedLesson.description}</p>
             </div>
-            <Badge className="bg-emerald-600 text-white text-[10px] border-0">Modo Profesor</Badge>
+            <Badge className="bg-amber-600 text-white text-xs border-0">Modo Profesor</Badge>
           </div>
         </div>
         <div className="p-4 pb-24">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="w-full grid grid-cols-4 mb-4 h-11">
-              <TabsTrigger value="contenido" className="text-[11px] gap-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+              <TabsTrigger value="contenido" className="text-sm gap-1 data-[state=active]:bg-amber-600 data-[state=active]:text-white">
                 <BookOpen className="h-3.5 w-3.5" /> Contenido
               </TabsTrigger>
-              <TabsTrigger value="videos" className="text-[11px] gap-1">
+              <TabsTrigger value="videos" className="text-sm gap-1">
                 <Play className="h-3.5 w-3.5" /> Videos
               </TabsTrigger>
-              <TabsTrigger value="documentos" className="text-[11px] gap-1">
+              <TabsTrigger value="documentos" className="text-sm gap-1">
                 <FileText className="h-3.5 w-3.5" /> Docs
               </TabsTrigger>
-              <TabsTrigger value="ejercicios" className="text-[11px] gap-1">
+              <TabsTrigger value="ejercicios" className="text-sm gap-1">
                 <Sparkles className="h-3.5 w-3.5" /> Tests
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="contenido">
               {selectedLesson.content ? <LessonContentRenderer content={selectedLesson.content} /> : (
-                <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+                <Card className="rounded-2xl border-dashed border-2 border-amber-100">
                   <CardContent className="py-10 text-center">
-                    <BookOpen className="h-7 w-7 text-emerald-300 mx-auto mb-2" />
+                    <BookOpen className="h-7 w-7 text-amber-200 mx-auto mb-2" />
                     <p className="text-muted-foreground text-sm">Sin contenido</p>
                   </CardContent>
                 </Card>
@@ -2085,9 +2085,9 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
                   </Card>
                 ))}
                 {!selectedLesson.youtubeUrl && !selectedLesson.tiktokUrl && !selectedLesson.videoUrl && (!selectedLesson.videoUrls || parseExtraVideos(selectedLesson.videoUrls).length === 0) && (
-                  <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+                  <Card className="rounded-2xl border-dashed border-2 border-amber-100">
                     <CardContent className="py-10 text-center">
-                      <Video className="h-7 w-7 text-emerald-300 mx-auto mb-2" />
+                      <Video className="h-7 w-7 text-amber-200 mx-auto mb-2" />
                       <p className="text-muted-foreground text-sm">No hay videos disponibles</p>
                     </CardContent>
                   </Card>
@@ -2104,7 +2104,7 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
                         <FileText className="h-8 w-8 text-amber-600" />
                         <div className="flex-1 min-w-0"><p className="font-medium text-sm truncate">{selectedLesson.documentName || "Documento principal"}</p></div>
-                        <Button size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" asChild><a href={normalizeFileUrl(selectedLesson.documentUrl)} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
+                        <Button size="sm" className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white" asChild><a href={normalizeFileUrl(selectedLesson.documentUrl)} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
                       </div>
                       {renderDocumentViewer(selectedLesson.documentUrl, selectedLesson.documentName || "Documento")}
                     </CardContent>
@@ -2117,16 +2117,16 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-200">
                         <FileText className="h-7 w-7 text-blue-600" />
                         <div className="flex-1 min-w-0"><p className="font-medium text-sm truncate">{d.name || `Documento ${i + 1}`}</p></div>
-                        <Button size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" asChild><a href={d.url} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
+                        <Button size="sm" className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white" asChild><a href={d.url} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
                       </div>
                       {renderDocumentViewer(d.url, d.name || `Documento ${i + 1}`)}
                     </CardContent>
                   </Card>
                 ))}
                 {!selectedLesson.documentUrl && (!selectedLesson.documentUrls || parseExtraDocs(selectedLesson.documentUrls).length === 0) && (
-                  <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+                  <Card className="rounded-2xl border-dashed border-2 border-amber-100">
                     <CardContent className="py-10 text-center">
-                      <FileText className="h-7 w-7 text-emerald-300 mx-auto mb-2" />
+                      <FileText className="h-7 w-7 text-amber-200 mx-auto mb-2" />
                       <p className="text-muted-foreground text-sm">No hay documentos disponibles</p>
                     </CardContent>
                   </Card>
@@ -2137,7 +2137,7 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
             <TabsContent value="ejercicios">
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge className="bg-emerald-100 text-emerald-700 text-[10px] border-0">
+                  <Badge className="bg-orange-50 text-amber-700 text-xs border-0">
                     <Eye className="h-3 w-3 mr-1" /> Modo Profesor — Vista Espejo
                   </Badge>
                 </div>
@@ -2148,9 +2148,9 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
                     ))}
                   </div>
                 ) : classroomExercises.length === 0 ? (
-                  <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+                  <Card className="rounded-2xl border-dashed border-2 border-amber-100">
                     <CardContent className="py-10 text-center">
-                      <Sparkles className="h-7 w-7 text-emerald-300 mx-auto mb-2" />
+                      <Sparkles className="h-7 w-7 text-amber-200 mx-auto mb-2" />
                       <p className="text-muted-foreground text-sm">No hay ejercicios para esta leccion</p>
                       <p className="text-xs text-muted-foreground mt-1">Genera ejercicios desde la pestana Ejercicios AI</p>
                     </CardContent>
@@ -2159,19 +2159,19 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
                   <>
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold text-sm">Ejercicios ({classroomExercises.length})</h3>
-                      <Badge variant="secondary" className="text-[10px]">Solo lectura</Badge>
+                      <Badge variant="secondary" className="text-xs">Solo lectura</Badge>
                     </div>
                     <div className="space-y-3">
                       {classroomExercises.map((ex, i) => {
                         const options = ex.options ? ex.options.split(",").map((o) => o.trim()) : [];
                         return (
-                          <Card key={ex.id} className="rounded-xl border-emerald-100">
+                          <Card key={ex.id} className="rounded-xl border-orange-50">
                             <CardContent className="p-4 space-y-2">
                               <p className="font-medium text-sm">{i + 1}. {ex.question}</p>
                               {ex.type === "multiple_choice" && options.length > 0 && (
                                 <div className="space-y-1.5">
                                   {options.map((opt) => (
-                                    <div key={opt} className={`p-2 rounded-lg text-xs border ${opt === ex.correctAnswer ? "border-emerald-300 bg-emerald-50 text-emerald-800 font-medium" : "border-gray-100 text-gray-600"}`}>
+                                    <div key={opt} className={`p-2 rounded-lg text-xs border ${opt === ex.correctAnswer ? "border-amber-200 bg-amber-50 text-amber-800 font-medium" : "border-gray-100 text-gray-600"}`}>
                                       {opt === ex.correctAnswer && "✓ "}{opt}
                                     </div>
                                   ))}
@@ -2179,12 +2179,12 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
                               )}
                               {ex.type === "true_false" && (
                                 <div className="flex gap-2">
-                                  <div className={`flex-1 p-2 rounded-lg text-xs border text-center ${ex.correctAnswer === "true" ? "border-emerald-300 bg-emerald-50 text-emerald-800 font-medium" : "border-gray-100 text-gray-600"}`}>✓ Verdadero</div>
-                                  <div className={`flex-1 p-2 rounded-lg text-xs border text-center ${ex.correctAnswer === "false" ? "border-emerald-300 bg-emerald-50 text-emerald-800 font-medium" : "border-gray-100 text-gray-600"}`}>✓ Falso</div>
+                                  <div className={`flex-1 p-2 rounded-lg text-xs border text-center ${ex.correctAnswer === "true" ? "border-amber-200 bg-amber-50 text-amber-800 font-medium" : "border-gray-100 text-gray-600"}`}>✓ Verdadero</div>
+                                  <div className={`flex-1 p-2 rounded-lg text-xs border text-center ${ex.correctAnswer === "false" ? "border-amber-200 bg-amber-50 text-amber-800 font-medium" : "border-gray-100 text-gray-600"}`}>✓ Falso</div>
                                 </div>
                               )}
                               {ex.type === "fill_blank" && (
-                                <div className="p-2 rounded-lg text-xs border border-emerald-300 bg-emerald-50 text-emerald-800">
+                                <div className="p-2 rounded-lg text-xs border border-amber-200 bg-amber-50 text-amber-800">
                                   ✓ Respuesta: {ex.correctAnswer}
                                 </div>
                               )}
@@ -2221,10 +2221,10 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
         </div>
       </div>
       {lessons.length === 0 ? (
-        <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+        <Card className="rounded-2xl border-dashed border-2 border-amber-100">
           <CardContent className="py-12 text-center">
-            <BookOpen className="h-8 w-8 text-emerald-300 mx-auto mb-3" />
-            <p className="font-medium text-emerald-900">No hay lecciones publicadas</p>
+            <BookOpen className="h-8 w-8 text-amber-200 mx-auto mb-3" />
+            <p className="font-medium text-stone-700">No hay lecciones publicadas</p>
           </CardContent>
         </Card>
       ) : (
@@ -2242,12 +2242,12 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm truncate text-gray-800">{lesson.title.replace(/^Clase \d+:\s*/, "")}</p>
-                        <p className="text-[11px] text-muted-foreground truncate mt-0.5">{lesson.description || "Leccion"}</p>
+                        <p className="text-sm text-muted-foreground truncate mt-0.5">{lesson.description || "Leccion"}</p>
                         <div className="flex gap-1 mt-1.5">
-                          {lesson.youtubeUrl && <Badge variant="secondary" className="text-[9px] h-4">YouTube</Badge>}
-                          {lesson.tiktokUrl && <Badge variant="secondary" className="text-[9px] h-4 bg-pink-100 text-pink-700">TikTok</Badge>}
-                          {lesson.videoUrl && <Badge variant="secondary" className="text-[9px] h-4">Video</Badge>}
-                          {lesson.documentUrl && <Badge variant="secondary" className="text-[9px] h-4 bg-amber-100 text-amber-700">Doc</Badge>}
+                          {lesson.youtubeUrl && <Badge variant="secondary" className="text-xs h-4">YouTube</Badge>}
+                          {lesson.tiktokUrl && <Badge variant="secondary" className="text-xs h-4 bg-pink-100 text-pink-700">TikTok</Badge>}
+                          {lesson.videoUrl && <Badge variant="secondary" className="text-xs h-4">Video</Badge>}
+                          {lesson.documentUrl && <Badge variant="secondary" className="text-xs h-4 bg-amber-100 text-amber-700">Doc</Badge>}
                         </div>
                       </div>
                       <Play className="h-5 w-5 text-violet-400 shrink-0 group-hover:translate-x-1 transition-transform" />
@@ -2287,19 +2287,19 @@ const LESSON_ICONS: Record<string, { icon: React.ElementType; color: string; bg:
   "rutina": { icon: Clock, color: "text-amber-600", bg: "bg-amber-100" },
   "comida": { icon: Utensils, color: "text-red-600", bg: "bg-red-100" },
   "restaurante": { icon: Utensils, color: "text-red-600", bg: "bg-red-100" },
-  "lugar": { icon: Map, color: "text-emerald-600", bg: "bg-emerald-100" },
-  "dirección": { icon: Map, color: "text-emerald-600", bg: "bg-emerald-100" },
+  "lugar": { icon: Map, color: "text-amber-600", bg: "bg-orange-50" },
+  "dirección": { icon: Map, color: "text-amber-600", bg: "bg-orange-50" },
   "verbo": { icon: PenTool, color: "text-blue-600", bg: "bg-blue-100" },
   "artículo": { icon: BookOpen, color: "text-sky-600", bg: "bg-sky-100" },
   "pronombre": { icon: Users, color: "text-purple-600", bg: "bg-purple-100" },
-  "presente": { icon: Play, color: "text-green-600", bg: "bg-green-100" },
+  "presente": { icon: Play, color: "text-amber-600", bg: "bg-amber-100" },
   "pasado": { icon: History, color: "text-stone-600", bg: "bg-stone-100" },
   "futuro": { icon: Zap, color: "text-yellow-600", bg: "bg-yellow-100" },
   "preposición": { icon: Target, color: "text-lime-600", bg: "bg-lime-100" },
   "adjetivo": { icon: Palette, color: "text-fuchsia-600", bg: "bg-fuchsia-100" },
   "adverbio": { icon: Sparkles, color: "text-fuchsia-600", bg: "bg-fuchsia-100" },
-  "repaso": { icon: Trophy, color: "text-emerald-600", bg: "bg-emerald-100" },
-  "autoevaluación": { icon: Award, color: "text-emerald-600", bg: "bg-emerald-100" },
+  "repaso": { icon: Trophy, color: "text-amber-600", bg: "bg-orange-50" },
+  "autoevaluación": { icon: Award, color: "text-amber-600", bg: "bg-orange-50" },
 };
 
 function getLessonIcon(title: string) {
@@ -2307,7 +2307,7 @@ function getLessonIcon(title: string) {
   for (const [key, val] of Object.entries(LESSON_ICONS)) {
     if (lower.includes(key)) return val;
   }
-  return { icon: BookOpen, color: "text-emerald-600", bg: "bg-emerald-100" };
+  return { icon: BookOpen, color: "text-amber-600", bg: "bg-orange-50" };
 }
 
 function StudentDashboard({ user, modules, progressData, accessGrants, onRefresh, onSelectLesson }: { user: User; modules: Module[]; progressData: StudentProgress[]; accessGrants: StudentAccess[]; onRefresh: () => void; onSelectLesson: (l: Lesson) => void }) {
@@ -2376,7 +2376,7 @@ function StudentDashboard({ user, modules, progressData, accessGrants, onRefresh
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-800 p-5 text-white"
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-600 via-teal-600 to-amber-800 p-5 text-white"
       >
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
@@ -2384,16 +2384,16 @@ function StudentDashboard({ user, modules, progressData, accessGrants, onRefresh
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="h-4 w-4 text-amber-300" />
-            <p className="text-emerald-100 text-xs font-medium">Chambari Academy</p>
+            <p className="text-orange-50 text-xs font-medium">Chambari Academy</p>
           </div>
           <h1 className="text-xl font-bold">Hola, {user.name.split(" ")[0]}!</h1>
-          <p className="text-emerald-200 text-sm mt-0.5">Continua tu aprendizaje de ingles</p>
+          <p className="text-amber-100 text-sm mt-0.5">Continua tu aprendizaje de ingles</p>
           
           {/* Progress bar */}
           {totalLessons > 0 && (
             <div className="mt-3">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-emerald-100">Progreso general</span>
+                <span className="text-xs text-orange-50">Progreso general</span>
                 <span className="text-xs font-bold">{overallProgress}%</span>
               </div>
               <div className="h-2 bg-white/20 rounded-full overflow-hidden">
@@ -2412,21 +2412,21 @@ function StudentDashboard({ user, modules, progressData, accessGrants, onRefresh
             <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2 flex-1">
               <BookOpen className="h-4 w-4" />
               <div>
-                <p className="text-[10px] text-emerald-100">Lecciones</p>
+                <p className="text-xs text-orange-50">Lecciones</p>
                 <p className="text-sm font-bold">{completedLessons}/{totalLessons}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2 flex-1">
               <Trophy className="h-4 w-4" />
               <div>
-                <p className="text-[10px] text-emerald-100">Completadas</p>
+                <p className="text-xs text-orange-50">Completadas</p>
                 <p className="text-sm font-bold">{completedLessons}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 bg-white/15 rounded-xl px-3 py-2 flex-1">
               <Flame className="h-4 w-4 text-orange-300" />
               <div>
-                <p className="text-[10px] text-emerald-100">Racha</p>
+                <p className="text-xs text-orange-50">Racha</p>
                 <p className="text-sm font-bold">{completedLessons > 0 ? Math.min(completedLessons, 7) : 0} dias</p>
               </div>
             </div>
@@ -2435,12 +2435,12 @@ function StudentDashboard({ user, modules, progressData, accessGrants, onRefresh
       </motion.div>
 
       {accessibleLessons.length === 0 ? (
-        <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+        <Card className="rounded-2xl border-dashed border-2 border-amber-100">
           <CardContent className="py-12 text-center">
-            <div className="h-16 w-16 mx-auto bg-emerald-100 rounded-2xl flex items-center justify-center mb-3">
-              <BookOpen className="h-8 w-8 text-emerald-400" />
+            <div className="h-16 w-16 mx-auto bg-orange-50 rounded-2xl flex items-center justify-center mb-3">
+              <BookOpen className="h-8 w-8 text-amber-400" />
             </div>
-            <p className="font-medium text-emerald-900">No hay lecciones disponibles</p>
+            <p className="font-medium text-stone-700">No hay lecciones disponibles</p>
             <p className="text-xs text-muted-foreground mt-1">Tu profesor te dara acceso pronto</p>
           </CardContent>
         </Card>
@@ -2459,19 +2459,19 @@ function StudentDashboard({ user, modules, progressData, accessGrants, onRefresh
                 {/* Module Header */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-sm font-bold">
+                    <div className="h-8 w-8 rounded-lg bg-amber-600 text-white flex items-center justify-center text-sm font-bold">
                       {mIdx + 1}
                     </div>
                     <div>
-                      <h2 className="font-bold text-sm text-emerald-900">{mod.title.replace(/^Módulo \d+:\s*/, "")}</h2>
-                      <p className="text-[10px] text-muted-foreground">{modCompleted} de {modLessons.length} completadas</p>
+                      <h2 className="font-bold text-sm text-stone-700">{mod.title.replace(/^Módulo \d+:\s*/, "")}</h2>
+                      <p className="text-xs text-muted-foreground">{modCompleted} de {modLessons.length} completadas</p>
                     </div>
                   </div>
-                  <Badge variant={modProgress === 100 ? "default" : "secondary"} className={modProgress === 100 ? "bg-emerald-600 text-[10px]" : "text-[10px]"}>
+                  <Badge variant={modProgress === 100 ? "default" : "secondary"} className={modProgress === 100 ? "bg-amber-600 text-xs" : "text-xs"}>
                     {modProgress}%
                   </Badge>
                 </div>
-                <Progress value={modProgress} className="h-1 mb-3 bg-emerald-100" />
+                <Progress value={modProgress} className="h-1 mb-3 bg-orange-50" />
 
                 {/* Lessons Grid */}
                 <div className="space-y-2.5">
@@ -2487,33 +2487,33 @@ function StudentDashboard({ user, modules, progressData, accessGrants, onRefresh
                         transition={{ delay: mIdx * 0.1 + index * 0.04 }}
                       >
                         <Card
-                          className="rounded-xl cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-emerald-50 overflow-hidden group"
+                          className="rounded-xl cursor-pointer hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 border-amber-50 overflow-hidden group"
                           onClick={() => onSelectLesson(lesson)}
                         >
                           <CardContent className="p-3.5">
                             <div className="flex items-center gap-3">
                               {/* Icon */}
-                              <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${prog.completed ? "bg-emerald-600 text-white shadow-md shadow-emerald-200" : iconData.bg + " " + iconData.color}`}>
+                              <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${prog.completed ? "bg-amber-600 text-white shadow-md shadow-amber-100" : iconData.bg + " " + iconData.color}`}>
                                 {prog.completed ? <CheckCircle className="h-5 w-5" /> : <IconComp className="h-5 w-5" />}
                               </div>
                               {/* Text */}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <p className={`font-semibold text-sm truncate ${prog.completed ? "text-emerald-700" : "text-gray-800"}`}>{lesson.title.replace(/^Clase \d+:\s*/, "")}</p>
+                                  <p className={`font-semibold text-sm truncate ${prog.completed ? "text-amber-700" : "text-gray-800"}`}>{lesson.title.replace(/^Clase \d+:\s*/, "")}</p>
                                 </div>
-                                <p className="text-[11px] text-muted-foreground truncate mt-0.5 line-clamp-1">
+                                <p className="text-sm text-muted-foreground truncate mt-0.5 line-clamp-1">
                                   {lesson.description || `Leccion ${lesson.orderIndex + 1}`}
                                 </p>
                                 {/* Mini progress */}
                                 {!prog.completed && prog.progressPercent > 0 && (
                                   <div className="flex items-center gap-1.5 mt-1.5">
                                     <Progress value={prog.progressPercent} className="h-1 flex-1 bg-gray-100" />
-                                    <span className="text-[9px] text-muted-foreground">{prog.progressPercent}%</span>
+                                    <span className="text-xs text-muted-foreground">{prog.progressPercent}%</span>
                                   </div>
                                 )}
                               </div>
                               {/* Arrow */}
-                              <div className={`shrink-0 transition-transform group-hover:translate-x-1 ${prog.completed ? "text-emerald-400" : "text-gray-300"}`}>
+                              <div className={`shrink-0 transition-transform group-hover:translate-x-1 ${prog.completed ? "text-amber-400" : "text-gray-300"}`}>
                                 <ChevronRight className="h-5 w-5" />
                               </div>
                             </div>
@@ -2606,7 +2606,7 @@ function LessonContentRenderer({ content }: { content: string }) {
     const parts = text.split(/(\*\*[^*]+\*\*)/g);
     return parts.map((part, i) => {
       if (part.startsWith("**") && part.endsWith("**")) {
-        return <strong key={i} className="font-semibold text-emerald-800">{part.slice(2, -2)}</strong>;
+        return <strong key={i} className="font-semibold text-amber-800">{part.slice(2, -2)}</strong>;
       }
       return <span key={i}>{part}</span>;
     });
@@ -2625,8 +2625,8 @@ function LessonContentRenderer({ content }: { content: string }) {
                 transition={{ delay: i * 0.03 }}
                 className="flex items-center gap-2 mt-5 first:mt-0"
               >
-                <div className="h-6 w-1.5 rounded-full bg-emerald-500 shrink-0" />
-                <h3 className="font-bold text-emerald-900 text-base">{renderBold(block.content)}</h3>
+                <div className="h-6 w-1.5 rounded-full bg-amber-500 shrink-0" />
+                <h3 className="font-bold text-stone-700 text-base">{renderBold(block.content)}</h3>
               </motion.div>
             );
           case "list":
@@ -2636,12 +2636,12 @@ function LessonContentRenderer({ content }: { content: string }) {
                 initial={{ opacity: 0, x: -5 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className="bg-white rounded-xl border border-emerald-50 p-3 space-y-2"
+                className="bg-white rounded-xl border border-amber-50 p-3 space-y-2"
               >
                 {block.items!.map((item, j) => (
                   <div key={j} className="flex items-start gap-2.5">
-                    <div className="h-5 w-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
-                      <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <div className="h-5 w-5 rounded-full bg-orange-50 flex items-center justify-center shrink-0 mt-0.5">
+                      <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                     </div>
                     <p className="text-sm leading-relaxed text-gray-700">{renderBold(item)}</p>
                   </div>
@@ -2658,7 +2658,7 @@ function LessonContentRenderer({ content }: { content: string }) {
                 className="relative bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-4 pl-10"
               >
                 <MessageCircle className="absolute top-3.5 left-3 h-5 w-5 text-blue-400" />
-                <p className="text-[10px] font-semibold text-blue-500 uppercase tracking-wider mb-1">Ejemplo</p>
+                <p className="text-xs font-semibold text-blue-500 uppercase tracking-wider mb-1">Ejemplo</p>
                 <p className="text-sm leading-relaxed text-blue-900">{renderBold(block.content)}</p>
               </motion.div>
             );
@@ -2672,7 +2672,7 @@ function LessonContentRenderer({ content }: { content: string }) {
                 className="relative bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200 p-4 pl-10"
               >
                 <Lightbulb className="absolute top-3.5 left-3 h-5 w-5 text-amber-500" />
-                <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wider mb-1">Consejo</p>
+                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider mb-1">Consejo</p>
                 <p className="text-sm leading-relaxed text-amber-900">{renderBold(block.content)}</p>
               </motion.div>
             );
@@ -2685,7 +2685,7 @@ function LessonContentRenderer({ content }: { content: string }) {
                 transition={{ delay: i * 0.03 }}
                 className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl border border-violet-100 p-4 space-y-2.5"
               >
-                <p className="text-[10px] font-semibold text-violet-500 uppercase tracking-wider flex items-center gap-1">
+                <p className="text-xs font-semibold text-violet-500 uppercase tracking-wider flex items-center gap-1">
                   <MessageCircle className="h-3 w-3" /> Conversacion
                 </p>
                 {block.items!.map((line, j) => {
@@ -2694,7 +2694,7 @@ function LessonContentRenderer({ content }: { content: string }) {
                   const isPersonA = /^A:|Person\s*1:|Profesor:/i.test(match[1]);
                   return (
                     <div key={j} className={`flex gap-2 ${isPersonA ? "" : "pl-6"}`}>
-                      <div className={`h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${isPersonA ? "bg-violet-500 text-white" : "bg-white text-violet-600 border border-violet-200"}`}>
+                      <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isPersonA ? "bg-violet-500 text-white" : "bg-white text-violet-600 border border-violet-200"}`}>
                         {isPersonA ? "A" : "B"}
                       </div>
                       <p className="text-sm leading-relaxed text-gray-700 pt-1">{renderBold(match[2])}</p>
@@ -2814,8 +2814,8 @@ function renderDocumentViewer(rawUrl: string, title: string) {
             />
           </div>
           <div className="px-3 py-2 bg-muted/50 border-t flex items-center gap-2">
-            <p className="text-[10px] text-muted-foreground flex-1 truncate">{title}</p>
-            <a href={openUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-emerald-600 hover:underline font-medium">
+            <p className="text-xs text-muted-foreground flex-1 truncate">{title}</p>
+            <a href={openUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-amber-600 hover:underline font-medium">
               Abrir en nueva pestaña
             </a>
           </div>
@@ -2830,7 +2830,7 @@ function renderDocumentViewer(rawUrl: string, title: string) {
             Haz clic en "Abrir" para ver el documento en una nueva pestaña.
           </p>
           <a href={openUrl} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm rounded-xl transition-colors">
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-xl transition-colors">
             <ExternalLink className="h-4 w-4" /> Abrir documento
           </a>
         </div>
@@ -2850,6 +2850,20 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = React.useRef<HTMLDivElement>(null);
+
+  // Flashcard study mode state
+  const [flashcardIndex, setFlashcardIndex] = useState(0);
+  const [flashcardFlipped, setFlashcardFlipped] = useState(false);
+  const [flashcardMode, setFlashcardMode] = useState(false);
+  const [studyScore, setStudyScore] = useState({ knew: 0, learning: 0 });
+
+  // Quiz state for practice mode
+  const [quizActive, setQuizActive] = useState(false);
+  const [quizIndex, setQuizIndex] = useState(0);
+  const [quizAnswer, setQuizAnswer] = useState("");
+  const [quizFeedback, setQuizFeedback] = useState<"correct" | "wrong" | null>(null);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizCompleted, setQuizCompleted] = useState(false);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -2920,24 +2934,24 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-0">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-emerald-100 px-4 pt-3 pb-2.5">
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-orange-50 px-4 pt-3 pb-2.5">
         <div className="flex items-center gap-3 mb-2">
-          <Button variant="ghost" size="icon" onClick={onBack} className="rounded-xl h-8 w-8 shrink-0 hover:bg-emerald-50">
+          <Button variant="ghost" size="icon" onClick={onBack} className="rounded-xl h-8 w-8 shrink-0 hover:bg-amber-50">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1 min-w-0">
-            <h2 className="font-bold text-sm truncate text-emerald-900">{lesson.title}</h2>
-            <p className="text-[10px] text-muted-foreground truncate">{lesson.description}</p>
+            <h2 className="font-bold text-sm truncate text-stone-700">{lesson.title}</h2>
+            <p className="text-xs text-muted-foreground truncate">{lesson.description}</p>
           </div>
           {currentProgress?.completed && (
-            <Badge className="bg-emerald-100 text-emerald-700 text-[10px] shrink-0 border-0">
+            <Badge className="bg-orange-50 text-amber-700 text-xs shrink-0 border-0">
               <CheckCircle className="h-3 w-3 mr-1" /> Completada
             </Badge>
           )}
         </div>
         <div className="flex items-center gap-2">
           <Progress value={progressPercent} className="h-1.5 flex-1" />
-          <span className="text-[10px] text-muted-foreground font-medium w-7 text-right">{progressPercent}%</span>
+          <span className="text-xs text-muted-foreground font-medium w-7 text-right">{progressPercent}%</span>
         </div>
       </div>
 
@@ -2945,19 +2959,22 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
       <div id="lesson-content-area" className="p-4 pb-24">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full grid grid-cols-6 mb-4 h-11">
-            <TabsTrigger value="contenido" className="text-[11px] gap-1 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+            <TabsTrigger value="contenido" className="text-sm gap-1 data-[state=active]:bg-amber-600 data-[state=active]:text-white">
               <BookOpen className="h-3.5 w-3.5" /> Contenido
             </TabsTrigger>
-            <TabsTrigger value="video" className="text-[11px] gap-1">
+            <TabsTrigger value="estudio" className="text-sm gap-1">
+              <Brain className="h-3.5 w-3.5" /> Estudio
+            </TabsTrigger>
+            <TabsTrigger value="video" className="text-sm gap-1">
               <Play className="h-3.5 w-3.5" /> Video
             </TabsTrigger>
-            <TabsTrigger value="documentos" className="text-[11px] gap-1">
+            <TabsTrigger value="documentos" className="text-sm gap-1">
               <FileText className="h-3.5 w-3.5" /> Docs
             </TabsTrigger>
-            <TabsTrigger value="ejercicios" className="text-[11px] gap-1">
+            <TabsTrigger value="ejercicios" className="text-sm gap-1">
               <Sparkles className="h-3.5 w-3.5" /> Tests
             </TabsTrigger>
-            <TabsTrigger value="chat" className="text-[11px] gap-1">
+            <TabsTrigger value="chat" className="text-sm gap-1">
               <Bot className="h-3.5 w-3.5" /> IA
             </TabsTrigger>
           </TabsList>
@@ -2966,15 +2983,282 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
             {lesson.content ? (
               <LessonContentRenderer content={lesson.content} />
             ) : (
-              <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+              <Card className="rounded-2xl border-dashed border-2 border-amber-100">
                 <CardContent className="py-10 text-center">
-                  <div className="h-14 w-14 mx-auto bg-emerald-50 rounded-2xl flex items-center justify-center mb-3">
-                    <BookOpen className="h-7 w-7 text-emerald-300" />
+                  <div className="h-14 w-14 mx-auto bg-amber-50 rounded-2xl flex items-center justify-center mb-3">
+                    <BookOpen className="h-7 w-7 text-amber-200" />
                   </div>
                   <p className="text-muted-foreground font-medium">Contenido en preparacion</p>
                   <p className="text-xs text-muted-foreground mt-1">Tu profesor lo publicara pronto</p>
                 </CardContent>
               </Card>
+            )}
+          </TabsContent>
+
+          {/* ── ESTUDIO: Flashcards + Modo Práctica ── */}
+          <TabsContent value="estudio">
+            {exercises.length === 0 ? (
+              <Card className="rounded-2xl border-dashed border-2 border-amber-100">
+                <CardContent className="py-10 text-center">
+                  <div className="h-14 w-14 mx-auto bg-amber-50 rounded-2xl flex items-center justify-center mb-3">
+                    <Brain className="h-7 w-7 text-amber-200" />
+                  </div>
+                  <p className="font-medium text-muted-foreground">Sin contenido de estudio</p>
+                  <p className="text-sm text-muted-foreground mt-1">Se necesitan ejercicios para generar flashcards y practica</p>
+                </CardContent>
+              </Card>
+            ) : !flashcardMode && !quizActive ? (
+              <div className="space-y-4">
+                {/* Study Mode Selection */}
+                <div className="text-center mb-6">
+                  <div className="h-16 w-16 mx-auto bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
+                    <Brain className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-stone-700">Modo de Estudio</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Elige como quieres repasar esta leccion</p>
+                  <p className="text-xs text-amber-600 mt-1 font-medium">{exercises.length} preguntas disponibles</p>
+                </div>
+
+                {/* Flashcards Mode */}
+                <Card className="rounded-2xl cursor-pointer hover:shadow-lg transition-all duration-200 border-2 border-transparent hover:border-amber-200" onClick={() => { setFlashcardMode(true); setFlashcardIndex(0); setFlashcardFlipped(false); setStudyScore({ knew: 0, learning: 0 }); }}>
+                  <CardContent className="p-5">
+                    <div className="flex items-center gap-4">
+                      <div className="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0">
+                        <Library className="h-7 w-7 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-lg font-bold text-stone-700">Flashcards</h4>
+                        <p className="text-sm text-muted-foreground">Repaso activo con tarjetas de estudio. Voltea cada tarjeta para ver la respuesta y evalua tu conocimiento.</p>
+                        <p className="text-xs text-blue-600 font-medium mt-1">Tecnica: Active Recall</p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Practice Quiz Mode */}
+                <Card className="rounded-2xl cursor-pointer hover:shadow-lg transition-all duration-200 border-2 border-transparent hover:border-amber-200" onClick={() => { setQuizActive(true); setQuizIndex(0); setQuizAnswer(""); setQuizFeedback(null); setQuizScore(0); setQuizCompleted(false); }}>
+                  <CardContent className="p-5">
+                    <div className="flex items-center gap-4">
+                      <div className="h-14 w-14 rounded-2xl bg-purple-50 flex items-center justify-center shrink-0">
+                        <Target className="h-7 w-7 text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-lg font-bold text-stone-700">Quiz Practico</h4>
+                        <p className="text-sm text-muted-foreground">Pon a prueba lo que aprendiste. Responde cada pregunta y obtendras retroalimentacion inmediata.</p>
+                        <p className="text-xs text-purple-600 font-medium mt-1">Tecnica: Retrieval Practice</p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Learning Tips */}
+                <Card className="rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-3">
+                      <Lightbulb className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                      <div>
+                        <h4 className="font-bold text-stone-700">Consejo de Estudio</h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          La investigacion en ciencias del aprendizaje demuestra que el <strong>repaso espaciado</strong> y la <strong>practica de recuperacion</strong> son las tecnicas mas efectivas para recordar a largo plazo. Estudia un poco cada dia en vez de mucho de una sola vez.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : flashcardMode ? (
+              /* ── Flashcard Mode ── */
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Button variant="ghost" size="sm" className="text-sm" onClick={() => setFlashcardMode(false)}>
+                    <ArrowLeft className="h-4 w-4 mr-1" /> Volver
+                  </Button>
+                  <Badge variant="secondary" className="text-sm bg-blue-50 text-blue-700">
+                    {flashcardIndex + 1} / {exercises.length}
+                  </Badge>
+                </div>
+
+                <Progress value={((flashcardIndex) / exercises.length) * 100} className="h-2" />
+
+                {/* Flashcard */}
+                <div
+                  className="min-h-[300px] cursor-pointer select-none"
+                  onClick={() => setFlashcardFlipped(!flashcardFlipped)}
+                >
+                  <AnimatePresence mode="wait">
+                    {!flashcardFlipped ? (
+                      <motion.div key="front" initial={{ rotateY: 0 }} animate={{ rotateY: 0 }} exit={{ rotateY: -90 }} transition={{ duration: 0.2 }} className="min-h-[300px] rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 p-6 flex flex-col items-center justify-center text-center">
+                        <Badge className="bg-blue-100 text-blue-700 text-sm mb-4">PREGUNTA</Badge>
+                        <p className="text-xl font-bold text-stone-700 leading-relaxed">{exercises[flashcardIndex].question}</p>
+                        {exercises[flashcardIndex].options && (
+                          <p className="text-sm text-muted-foreground mt-4">Toca para ver la respuesta</p>
+                        )}
+                        {!exercises[flashcardIndex].options && (
+                          <p className="text-sm text-muted-foreground mt-4">Toca para ver la respuesta</p>
+                        )}
+                      </motion.div>
+                    ) : (
+                      <motion.div key="back" initial={{ rotateY: 90 }} animate={{ rotateY: 0 }} transition={{ duration: 0.2 }} className="min-h-[300px] rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 p-6 flex flex-col items-center justify-center text-center">
+                        <Badge className="bg-green-100 text-green-700 text-sm mb-4">RESPUESTA</Badge>
+                        <p className="text-2xl font-bold text-stone-700">{exercises[flashcardIndex].correctAnswer}</p>
+                        {exercises[flashcardIndex].explanation && (
+                          <p className="text-sm text-muted-foreground mt-4 italic">"{exercises[flashcardIndex].explanation}"</p>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Study Controls */}
+                {flashcardFlipped && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
+                    <Button className="flex-1 h-12 rounded-xl bg-red-100 text-red-700 hover:bg-red-200 text-sm font-medium" onClick={() => {
+                      setStudyScore(s => ({ ...s, learning: s.learning + 1 }));
+                      if (flashcardIndex < exercises.length - 1) { setFlashcardIndex(i => i + 1); setFlashcardFlipped(false); }
+                    }}>
+                      <X className="h-4 w-4 mr-1" /> Sigo aprendiendo
+                    </Button>
+                    <Button className="flex-1 h-12 rounded-xl bg-green-100 text-green-700 hover:bg-green-200 text-sm font-medium" onClick={() => {
+                      setStudyScore(s => ({ ...s, knew: s.knew + 1 }));
+                      if (flashcardIndex < exercises.length - 1) { setFlashcardIndex(i => i + 1); setFlashcardFlipped(false); }
+                    }}>
+                      <CheckCircle className="h-4 w-4 mr-1" /> Lo se
+                    </Button>
+                  </motion.div>
+                )}
+
+                {/* Study Complete */}
+                {flashcardFlipped && flashcardIndex === exercises.length - 1 && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-3">
+                    <div className="h-16 w-16 mx-auto bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center">
+                      <Trophy className="h-8 w-8 text-white" />
+                    </div>
+                    <h4 className="text-lg font-bold text-stone-700">Estudio completado</h4>
+                    <p className="text-sm text-muted-foreground">Repasaste {studyScore.knew + studyScore.learning} tarjetas</p>
+                    <div className="flex justify-center gap-4">
+                      <div className="text-center"><p className="text-2xl font-bold text-green-600">{studyScore.knew}</p><p className="text-xs text-muted-foreground">Dominadas</p></div>
+                      <div className="text-center"><p className="text-2xl font-bold text-amber-600">{studyScore.learning}</p><p className="text-xs text-muted-foreground">Por repasar</p></div>
+                    </div>
+                    <Button className="rounded-xl" onClick={() => setFlashcardMode(false)}>Terminar</Button>
+                  </motion.div>
+                )}
+              </div>
+            ) : (
+              /* ── Practice Quiz Mode ── */
+              <div className="space-y-4">
+                {!quizCompleted ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <Button variant="ghost" size="sm" className="text-sm" onClick={() => setQuizActive(false)}>
+                        <ArrowLeft className="h-4 w-4 mr-1" /> Volver
+                      </Button>
+                      <Badge variant="secondary" className="text-sm bg-purple-50 text-purple-700">
+                        {quizIndex + 1} / {exercises.length} | Puntos: {quizScore}
+                      </Badge>
+                    </div>
+                    <Progress value={((quizIndex) / exercises.length) * 100} className="h-2" />
+
+                    <Card className="rounded-2xl">
+                      <CardContent className="p-6 space-y-4">
+                        <Badge className="bg-purple-100 text-purple-700 text-sm">PREGUNTA {quizIndex + 1}</Badge>
+                        <h3 className="text-lg font-bold text-stone-700 leading-relaxed">{exercises[quizIndex].question}</h3>
+
+                        {exercises[quizIndex].options && (
+                          <div className="space-y-2">
+                            {(() => { try { return JSON.parse(exercises[quizIndex].options || '[]'); } catch { return exercises[quizIndex].options?.split(',').map((o: string) => o.trim()) || []; } })().map((opt: string, i: number) => {
+                              const letter = String.fromCharCode(65 + i);
+                              return (
+                                <button key={i} onClick={() => {
+                                  if (quizFeedback) return;
+                                  const isCorrect = opt.trim() === exercises[quizIndex].correctAnswer.trim();
+                                  setQuizFeedback(isCorrect ? "correct" : "wrong");
+                                  if (isCorrect) setQuizScore(s => s + 10);
+                                }} className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 text-sm font-medium flex items-center gap-3
+                                  ${quizFeedback === null ? 'border-gray-200 hover:border-amber-300 hover:bg-amber-50' :
+                                    opt.trim() === exercises[quizIndex].correctAnswer.trim() ? 'border-green-400 bg-green-50 text-green-700' :
+                                    quizAnswer === opt ? 'border-red-400 bg-red-50 text-red-700' : 'border-gray-200 opacity-50'}
+                                `}>
+                                  <span className="h-8 w-8 rounded-lg bg-white border flex items-center justify-center text-xs font-bold shrink-0">{letter}</span>
+                                  <span>{opt}</span>
+                                  {quizFeedback && opt.trim() === exercises[quizIndex].correctAnswer.trim() && <CheckCircle className="h-5 w-5 ml-auto text-green-600" />}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {!exercises[quizIndex].options && (
+                          <div className="space-y-3">
+                            <Input placeholder="Escribe tu respuesta..." value={quizAnswer} onChange={(e) => setQuizAnswer(e.target.value)} className="rounded-xl text-sm h-12" disabled={quizFeedback !== null} />
+                            <Button className="w-full rounded-xl h-12 text-sm" disabled={!quizAnswer.trim() || quizFeedback !== null} onClick={() => {
+                              const isCorrect = quizAnswer.trim().toLowerCase() === exercises[quizIndex].correctAnswer.trim().toLowerCase();
+                              setQuizFeedback(isCorrect ? "correct" : "wrong");
+                              if (isCorrect) setQuizScore(s => s + 10);
+                            }}>
+                              Comprobar respuesta
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Feedback */}
+                        {quizFeedback && (
+                          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`p-4 rounded-xl text-sm ${quizFeedback === "correct" ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+                            {quizFeedback === "correct" ? (
+                              <div className="flex items-start gap-2">
+                                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                                <div><p className="font-bold text-green-700">Correcto! +10 puntos</p><p className="text-green-600 mt-1">{exercises[quizIndex].explanation || "Excelente trabajo!"}</p></div>
+                              </div>
+                            ) : (
+                              <div className="flex items-start gap-2">
+                                <X className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
+                                <div><p className="font-bold text-red-700">No es correcto</p><p className="text-red-600 mt-1">La respuesta es: <strong>{exercises[quizIndex].correctAnswer}</strong></p>{exercises[quizIndex].explanation && <p className="text-red-600 mt-1 italic">"{exercises[quizIndex].explanation}"</p>}</div>
+                              </div>
+                            )}
+                          </motion.div>
+                        )}
+
+                        {/* Next Button */}
+                        {quizFeedback && (
+                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                            <Button className="w-full rounded-xl h-12 text-sm font-medium" onClick={() => {
+                              if (quizIndex < exercises.length - 1) {
+                                setQuizIndex(i => i + 1);
+                                setQuizAnswer("");
+                                setQuizFeedback(null);
+                              } else {
+                                setQuizCompleted(true);
+                              }
+                            }}>
+                              {quizIndex < exercises.length - 1 ? "Siguiente pregunta" : "Ver resultados"} <ChevronRight className="h-4 w-4 ml-1" />
+                            </Button>
+                          </motion.div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </>
+                ) : (
+                  /* ── Quiz Results ── */
+                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-5 py-4">
+                    <div className={`h-24 w-24 mx-auto rounded-full flex items-center justify-center shadow-lg ${quizScore >= exercises.length * 7 ? 'bg-gradient-to-br from-amber-400 to-amber-600' : quizScore >= exercises.length * 4 ? 'bg-gradient-to-br from-blue-400 to-blue-600' : 'bg-gradient-to-br from-stone-400 to-stone-600'}`}>
+                      <Trophy className="h-12 w-12 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-stone-700">Quiz Completado</h3>
+                    <div className="flex justify-center gap-6">
+                      <div className="text-center"><p className="text-3xl font-bold text-amber-600">{quizScore}</p><p className="text-sm text-muted-foreground">Puntos</p></div>
+                      <div className="text-center"><p className="text-3xl font-bold text-stone-700">{Math.round((quizScore / (exercises.length * 10)) * 100)}%</p><p className="text-sm text-muted-foreground">Precision</p></div>
+                    </div>
+                    <p className="text-lg text-muted-foreground">
+                      {quizScore >= exercises.length * 8 ? "Excelente! Dominas este tema." : quizScore >= exercises.length * 5 ? "Buen trabajo! Repasa los puntos debiles." : "Sigue practicando, lo lograras!"}
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                      <Button variant="outline" className="rounded-xl" onClick={() => setQuizActive(false)}>Volver</Button>
+                      <Button className="rounded-xl" onClick={() => { setQuizIndex(0); setQuizAnswer(""); setQuizFeedback(null); setQuizScore(0); setQuizCompleted(false); }}>Reintentar</Button>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
             )}
           </TabsContent>
 
@@ -3028,9 +3312,9 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                   </Card>
                 ))}
                 {!lesson.youtubeUrl && !lesson.tiktokUrl && !lesson.videoUrl && (!lesson.videoUrls || parseExtraVideos(lesson.videoUrls).length === 0) && (
-                  <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+                  <Card className="rounded-2xl border-dashed border-2 border-amber-100">
                     <CardContent className="py-10 text-center">
-                      <Video className="h-7 w-7 text-emerald-300 mx-auto mb-2" />
+                      <Video className="h-7 w-7 text-amber-200 mx-auto mb-2" />
                       <p className="text-muted-foreground text-sm">No hay videos disponibles</p>
                     </CardContent>
                   </Card>
@@ -3048,9 +3332,9 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                         <FileText className="h-8 w-8 text-amber-600" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{lesson.documentName || "Documento principal"}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{lesson.documentUrl}</p>
+                          <p className="text-xs text-muted-foreground truncate">{lesson.documentUrl}</p>
                         </div>
-                        <Button size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" asChild>
+                        <Button size="sm" className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white" asChild>
                           <a href={normalizeFileUrl(lesson.documentUrl)} target="_blank" rel="noopener noreferrer">
                             <Download className="h-4 w-4 mr-1" /> Abrir
                           </a>
@@ -3069,18 +3353,18 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                         <FileText className="h-7 w-7 text-blue-600" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{d.name || `Documento ${i + 1}`}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{d.url}</p>
+                          <p className="text-xs text-muted-foreground truncate">{d.url}</p>
                         </div>
-                        <Button size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" asChild><a href={d.url} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
+                        <Button size="sm" className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white" asChild><a href={d.url} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
                       </div>
                       {renderDocumentViewer(d.url, d.name || `Documento ${i + 1}`)}
                     </CardContent>
                   </Card>
                 ))}
                 {!lesson.documentUrl && (!lesson.documentUrls || parseExtraDocs(lesson.documentUrls).length === 0) && (
-                  <Card className="rounded-2xl border-dashed border-2 border-emerald-200">
+                  <Card className="rounded-2xl border-dashed border-2 border-amber-100">
                     <CardContent className="py-10 text-center">
-                      <FileText className="h-7 w-7 text-emerald-300 mx-auto mb-2" />
+                      <FileText className="h-7 w-7 text-amber-200 mx-auto mb-2" />
                       <p className="text-muted-foreground text-sm">No hay documentos disponibles</p>
                     </CardContent>
                   </Card>
@@ -3113,7 +3397,7 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                         const options = ex.options ? ex.options.split(",").map((o) => o.trim()) : [];
                         
                         return (
-                          <div key={ex.id} className={`p-4 rounded-xl border ${correct ? "border-emerald-300 bg-emerald-50" : answered && !correct ? "border-red-300 bg-red-50" : "border-emerald-100 bg-white"}`}>
+                          <div key={ex.id} className={`p-4 rounded-xl border ${correct ? "border-amber-200 bg-amber-50" : answered && !correct ? "border-red-300 bg-red-50" : "border-orange-50 bg-white"}`}>
                             <p className="font-medium text-sm mb-3">{i + 1}. {ex.question}</p>
                             
                             {ex.type === "true_false" && (
@@ -3122,7 +3406,7 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                                   <Button
                                     key={val}
                                     variant={studentAnswers[ex.id] === val ? "default" : "outline"}
-                                    className={`rounded-xl flex-1 ${studentAnswers[ex.id] === val ? (correct ? "bg-emerald-600" : "bg-red-500") : ""}`}
+                                    className={`rounded-xl flex-1 ${studentAnswers[ex.id] === val ? (correct ? "bg-amber-600" : "bg-red-500") : ""}`}
                                     onClick={() => onAnswerChange({ ...studentAnswers, [ex.id]: val })}
                                   >
                                     {label}
@@ -3139,8 +3423,8 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                                     onClick={() => onAnswerChange({ ...studentAnswers, [ex.id]: opt })}
                                     className={`w-full text-left p-3 rounded-xl border text-sm transition-colors ${
                                       studentAnswers[ex.id] === opt
-                                        ? correct ? "border-emerald-400 bg-emerald-100 text-emerald-800" : "border-red-400 bg-red-100 text-red-800"
-                                        : "border-emerald-100 hover:bg-emerald-50"
+                                        ? correct ? "border-amber-400 bg-orange-50 text-amber-800" : "border-red-400 bg-red-100 text-red-800"
+                                        : "border-orange-50 hover:bg-amber-50"
                                     }`}
                                   >
                                     {opt}
@@ -3154,12 +3438,12 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                                 value={studentAnswers[ex.id] || ""}
                                 onChange={(e) => onAnswerChange({ ...studentAnswers, [ex.id]: e.target.value })}
                                 placeholder="Tu respuesta..."
-                                className={`rounded-xl ${answered && !correct ? "border-red-400" : answered && correct ? "border-emerald-400" : ""}`}
+                                className={`rounded-xl ${answered && !correct ? "border-red-400" : answered && correct ? "border-amber-400" : ""}`}
                               />
                             )}
 
                             {answered && !correct && (
-                              <p className="text-xs text-emerald-600 mt-2">✓ Respuesta correcta: <strong>{ex.correctAnswer}</strong></p>
+                              <p className="text-xs text-amber-600 mt-2">✓ Respuesta correcta: <strong>{ex.correctAnswer}</strong></p>
                             )}
                             {ex.explanation && answered && (
                               <p className="text-xs text-muted-foreground mt-2 italic">💡 {ex.explanation}</p>
@@ -3169,9 +3453,9 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                       })}
                     </div>
 
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-amber-50 border border-amber-100">
                       <span className="text-sm font-medium">Puntuación: {exerciseScore}/{exercises.length}</span>
-                      <Button onClick={markComplete} className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" disabled={exerciseScore === 0}>
+                      <Button onClick={markComplete} className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white" disabled={exerciseScore === 0}>
                         <CheckCircle className="h-4 w-4 mr-2" /> Marcar Completada
                       </Button>
                     </div>
@@ -3185,19 +3469,19 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
             <Card className="rounded-xl flex flex-col" style={{ height: "500px" }}>
               <CardContent className="p-4 flex flex-col flex-1 gap-3 min-h-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                    <Bot className="h-4 w-4 text-emerald-600" />
+                  <div className="h-8 w-8 rounded-lg bg-orange-50 flex items-center justify-center">
+                    <Bot className="h-4 w-4 text-amber-600" />
                   </div>
                   <div>
                     <p className="font-semibold text-sm">Asistente Chambari</p>
-                    <p className="text-[10px] text-muted-foreground">Tu tutor de ingles con IA</p>
+                    <p className="text-xs text-muted-foreground">Tu tutor de ingles con IA</p>
                   </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 min-h-0">
                   {chatMessages.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
-                      <Bot className="h-10 w-10 mx-auto mb-2 text-emerald-300" />
+                      <Bot className="h-10 w-10 mx-auto mb-2 text-amber-200" />
                       <p className="text-sm font-medium">Hola, soy tu asistente</p>
                       <p className="text-xs mt-1">Preguntame sobre la leccion o cualquier tema de ingles</p>
                       <div className="flex flex-wrap gap-2 justify-center mt-4">
@@ -3209,7 +3493,7 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                           <button
                             key={suggestion}
                             onClick={() => { setChatInput(suggestion); }}
-                            className="text-[11px] px-3 py-1.5 rounded-full border border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-colors"
+                            className="text-sm px-3 py-1.5 rounded-full border border-amber-100 text-amber-700 hover:bg-amber-50 transition-colors"
                           >
                             {suggestion}
                           </button>
@@ -3226,8 +3510,8 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                     >
                       <div className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed ${
                         msg.role === "user"
-                          ? "bg-emerald-600 text-white rounded-br-md"
-                          : "bg-white border border-emerald-100 text-gray-700 rounded-bl-md"
+                          ? "bg-amber-600 text-white rounded-br-md"
+                          : "bg-white border border-orange-50 text-gray-700 rounded-bl-md"
                       }`}>
                         {msg.content}
                       </div>
@@ -3235,11 +3519,11 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                   ))}
                   {chatLoading && (
                     <div className="flex justify-start">
-                      <div className="bg-white border border-emerald-100 p-3 rounded-2xl rounded-bl-md">
+                      <div className="bg-white border border-orange-50 p-3 rounded-2xl rounded-bl-md">
                         <div className="flex gap-1">
-                          <span className="h-2 w-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                          <span className="h-2 w-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                          <span className="h-2 w-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                          <span className="h-2 w-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                          <span className="h-2 w-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <span className="h-2 w-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                         </div>
                       </div>
                     </div>
@@ -3247,7 +3531,7 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                   <div ref={chatEndRef} />
                 </div>
 
-                <div className="flex gap-2 pt-2 border-t border-emerald-100">
+                <div className="flex gap-2 pt-2 border-t border-orange-50">
                   <Input
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
@@ -3259,7 +3543,7 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                   <Button
                     onClick={sendChatMessage}
                     disabled={!chatInput.trim() || chatLoading}
-                    className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white h-10 w-10 p-0"
+                    className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white h-10 w-10 p-0"
                   >
                     {chatLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>
