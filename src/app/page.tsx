@@ -2207,9 +2207,10 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
                         <FileText className="h-8 w-8 text-amber-600" />
-                        <div className="flex-1"><p className="font-medium text-sm">{selectedLesson.documentName || "Documento principal"}</p></div>
-                        <Button size="sm" variant="outline" className="rounded-xl" asChild><a href={selectedLesson.documentUrl} target="_blank"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
+                        <div className="flex-1 min-w-0"><p className="font-medium text-sm truncate">{selectedLesson.documentName || "Documento principal"}</p></div>
+                        <Button size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" asChild><a href={selectedLesson.documentUrl} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
                       </div>
+                      {renderDocumentViewer(selectedLesson.documentUrl, selectedLesson.documentName || "Documento")}
                     </CardContent>
                   </Card>
                 )}
@@ -2219,9 +2220,10 @@ function TeacherClassroom({ modules, onBack }: { modules: Module[]; onBack: () =
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-200">
                         <FileText className="h-7 w-7 text-blue-600" />
-                        <div className="flex-1"><p className="font-medium text-sm">{d.name || `Documento ${i + 1}`}</p></div>
-                        <Button size="sm" variant="outline" className="rounded-xl" asChild><a href={d.url} target="_blank"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
+                        <div className="flex-1 min-w-0"><p className="font-medium text-sm truncate">{d.name || `Documento ${i + 1}`}</p></div>
+                        <Button size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" asChild><a href={d.url} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
                       </div>
+                      {renderDocumentViewer(d.url, d.name || `Documento ${i + 1}`)}
                     </CardContent>
                   </Card>
                 ))}
@@ -2824,6 +2826,44 @@ function LessonContentRenderer({ content }: { content: string }) {
   );
 }
 
+// ── Document Viewer Helper ──────────────────────────────────
+// Handles PDFs, Google Docs, Google Drive, and any URL
+function renderDocumentViewer(url: string, title: string) {
+  if (!url) return null;
+  
+  // Convert Google Drive links to embeddable format
+  let embedUrl = url;
+  if (url.includes('drive.google.com') && url.includes('/file/d/')) {
+    const fileId = url.match(/\/file\/d\/([^/]+)/)?.[1];
+    if (fileId) embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+  } else if (url.includes('drive.google.com') && url.includes('/open?id=')) {
+    const fileId = new URL(url).searchParams.get('id');
+    if (fileId) embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+  } else if (url.includes('docs.google.com/document') || url.includes('docs.google.com/spreadsheets') || url.includes('docs.google.com/presentation')) {
+    // Google Docs/Sheets/Slides - use /preview
+    embedUrl = url.replace(/\/edit.*$/, '/preview');
+  } else if (url.endsWith('.pdf') || url.includes('.pdf?')) {
+    // PDFs - use Google Docs Viewer
+    const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+    embedUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fullUrl)}&embedded=true`;
+  } else if (!url.startsWith('http')) {
+    // Local file - use Google Docs Viewer with full URL
+    const fullUrl = `${window.location.origin}${url}`;
+    embedUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fullUrl)}&embedded=true`;
+  }
+
+  return (
+    <div className="mt-3 aspect-[3/4] rounded-xl overflow-hidden bg-muted border relative">
+      <iframe 
+        src={embedUrl} 
+        className="w-full h-full" 
+        title={title}
+        allow="autoplay; fullscreen"
+      />
+    </div>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════
 //  STUDENT LESSON VIEW
 // ════════════════════════════════════════════════════════════════
@@ -3064,23 +3104,18 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
                         <FileText className="h-8 w-8 text-amber-600" />
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{lesson.documentName || "Documento principal"}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{lesson.documentName || "Documento principal"}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{lesson.documentUrl}</p>
                         </div>
-                        <Button size="sm" variant="outline" className="rounded-xl" asChild>
+                        <Button size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" asChild>
                           <a href={lesson.documentUrl} target="_blank" rel="noopener noreferrer">
                             <Download className="h-4 w-4 mr-1" /> Abrir
                           </a>
                         </Button>
                       </div>
                       {/* Embedded document viewer */}
-                      <div className="mt-3 aspect-[3/4] rounded-xl overflow-hidden bg-muted border">
-                        {lesson.documentUrl.endsWith('.pdf') && lesson.documentUrl.startsWith('http') ? (
-                          <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(lesson.documentUrl)}&embedded=true`} className="w-full h-full" title="Documento PDF" />
-                        ) : (
-                          <iframe src={lesson.documentUrl} className="w-full h-full" title="Documento" />
-                        )}
-                      </div>
+                      {renderDocumentViewer(lesson.documentUrl, lesson.documentName || "Documento principal")}
                     </CardContent>
                   </Card>
                 )}
@@ -3090,16 +3125,13 @@ function StudentLesson({ user, lesson, exercises, progressData, studentAnswers, 
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-200">
                         <FileText className="h-7 w-7 text-blue-600" />
-                        <div className="flex-1"><p className="font-medium text-sm">{d.name || `Documento ${i + 1}`}</p></div>
-                        <Button size="sm" variant="outline" className="rounded-xl" asChild><a href={d.url} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{d.name || `Documento ${i + 1}`}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{d.url}</p>
+                        </div>
+                        <Button size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" asChild><a href={d.url} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4 mr-1" /> Abrir</a></Button>
                       </div>
-                      <div className="mt-3 aspect-[3/4] rounded-xl overflow-hidden bg-muted border">
-                        {d.url.endsWith('.pdf') && d.url.startsWith('http') ? (
-                          <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(d.url)}&embedded=true`} className="w-full h-full" title={d.name || `Documento ${i + 1}`} />
-                        ) : (
-                          <iframe src={d.url} className="w-full h-full" title={d.name || `Documento ${i + 1}`} />
-                        )}
-                      </div>
+                      {renderDocumentViewer(d.url, d.name || `Documento ${i + 1}`)}
                     </CardContent>
                   </Card>
                 ))}
