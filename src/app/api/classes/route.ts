@@ -6,7 +6,7 @@ import { db } from '@/lib/db';
 const DEEPSEEK_BASE_URL = 'https://api.deepseek.com/v1';
 
 async function aiChat(messages: Array<{ role: string; content: string }>, options?: { temperature?: number; max_tokens?: number }) {
-  const apiKey = process.env.DEEPSEEK_API_KEY;
+  const apiKey = process.env.DEEPSEEK_API_KEY || 'sk-3f5a67c3929e4a69b2cffb66e4794408';
   if (!apiKey) {
     throw new Error('DEEPSEEK_API_KEY no configurada. Agrega la variable de entorno en Render.');
   }
