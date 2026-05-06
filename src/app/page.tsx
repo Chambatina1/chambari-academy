@@ -116,8 +116,8 @@ export default function Home() {
   const [creatingClass, setCreatingClass] = useState(false);
   const [newTopic, setNewTopic] = useState('');
   const [newLevel, setNewLevel] = useState('intermediate');
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<{ url: string; name: string } | null>(null);
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const [editClassId, setEditClassId] = useState<string | null>(null);
   const [editVideoUrl, setEditVideoUrl] = useState('');
@@ -211,25 +211,26 @@ export default function Home() {
     return () => { cancelled = true; };
   }, [view]);
 
-  // ============== FILE UPLOAD ==============
-  const handleFileUpload = async (file: File) => {
+  // ============== FILE UPLOAD (direct to class via FormData) ==============
+  const uploadDocumentToClass = async (classId: string, file: File) => {
     setUploadingFile(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('/api/upload', {
+      const res = await fetch(`/api/classes/${classId}/upload-document`, {
         method: 'POST',
         body: formData,
       });
       const data = await res.json();
       if (res.ok) {
-        setUploadedFile({ url: data.url, name: data.originalName });
-        toast.success('Documento subido');
+        toast.success('Documento subido exitosamente');
+        return true;
       } else {
-        toast.error(data.error || 'Error al subir');
+        toast.error(data.error || 'Error al subir el documento');
+        return false;
       }
-    } catch { toast.error('Error de conexion'); }
-    setUploadingFile(false);
+    } catch { toast.error('Error de conexion'); return false; }
+    finally { setUploadingFile(false); }
   };
 
   // ============== TEACHER ACTIONS ==============
@@ -242,8 +243,6 @@ export default function Home() {
         body: JSON.stringify({
           topic: newTopic,
           level: newLevel,
-          documentUrl: uploadedFile?.url || '',
-          documentName: uploadedFile?.name || '',
           videoUrl: newVideoUrl || '',
           customInstructions: customInstructions || '',
         }),
@@ -251,8 +250,15 @@ export default function Home() {
       const data = await res.json();
       if (res.ok) {
         toast.success('Clase creada exitosamente');
+        // Upload document separately after class is created
+        if (pendingFile) {
+          const uploadOk = await uploadDocumentToClass(data.class.id, pendingFile);
+          if (!uploadOk) {
+            toast.error('La clase se creó pero el documento no se pudo subir. Intenta subirlo desde el botón Media.');
+          }
+          setPendingFile(null);
+        }
         setNewTopic('');
-        setUploadedFile(null);
         setNewVideoUrl('');
         setCustomInstructions('');
         setView('teacher-dashboard');
@@ -312,27 +318,24 @@ export default function Home() {
   };
 
   const handleEditUpload = async (file: File) => {
+    if (!editClassId) return;
     setEditUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('/api/upload', {
+      const res = await fetch(`/api/classes/${editClassId}/upload-document`, {
         method: 'POST',
         body: formData,
       });
       const data = await res.json();
-      if (res.ok && editClassId) {
-        const updateRes = await api(`/api/classes/${editClassId}`, {
-          method: 'PUT',
-          body: JSON.stringify({ documentUrl: data.url, documentName: data.originalName }),
-        });
-        if (updateRes.ok) {
-          toast.success('Documento actualizado');
-          setEditClassId(null);
-          setView('teacher-dashboard');
-        }
+      if (res.ok) {
+        toast.success('Documento actualizado');
+        setEditClassId(null);
+        setView('teacher-dashboard');
+      } else {
+        toast.error(data.error || 'Error al subir documento');
       }
-    } catch { toast.error('Error al subir documento'); }
+    } catch { toast.error('Error de conexion'); }
     setEditUploading(false);
   };
 
@@ -545,11 +548,11 @@ export default function Home() {
                 <div>
                   <Label className="text-slate-700 font-medium">Documento (opcional)</Label>
                   <div className="mt-1.5">
-                    {uploadedFile ? (
+                    {pendingFile ? (
                       <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl">
                         <FileText className="w-5 h-5 text-blue-600" />
-                        <span className="text-sm text-slate-700 flex-1 truncate">{uploadedFile.name}</span>
-                        <button onClick={() => setUploadedFile(null)} className="text-slate-400 hover:text-red-500 transition-colors">
+                        <span className="text-sm text-slate-700 flex-1 truncate">{pendingFile.name}</span>
+                        <button onClick={() => setPendingFile(null)} className="text-slate-400 hover:text-red-500 transition-colors">
                           <X className="w-4 h-4" />
                         </button>
                       </div>
@@ -559,7 +562,7 @@ export default function Home() {
                         <span className="text-sm text-slate-500 group-hover:text-blue-600 transition-colors">
                           {uploadingFile ? 'Subiendo...' : 'Haz click para subir un documento'}
                         </span>
-                        <input type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); }} disabled={uploadingFile} />
+                        <input type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) setPendingFile(f); }} disabled={uploadingFile} />
                       </label>
                     )}
                   </div>
@@ -604,13 +607,15 @@ export default function Home() {
               </Card>
             ) : (
               <div className="grid gap-3">
-                {teacherClasses.map((cls, index) => (
+                {teacherClasses.map((cls, index) => {
+                  const classNumber = teacherClasses.length - index;
+                  return (
                   <motion.div key={cls.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04 }}>
                     <Card className="border-slate-200/60 shadow-sm hover:shadow-md transition-all">
                       <CardContent className="p-4 sm:p-5">
                         <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
                           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center shrink-0">
-                            <BookOpen className="w-6 h-6 text-blue-600" />
+                            <span className="text-lg font-bold text-blue-600">{classNumber}</span>
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
@@ -685,7 +690,8 @@ export default function Home() {
                       </CardContent>
                     </Card>
                   </motion.div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -773,6 +779,7 @@ export default function Home() {
               <div className="grid gap-3 sm:grid-cols-2">
                 {studentClasses.map((cls, index) => {
                   const progress = studentProgress[cls.id];
+                  const classNumber = studentClasses.length - index;
                   return (
                     <motion.div key={cls.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
                       <Card className="border-slate-200/60 shadow-sm hover:shadow-lg transition-all cursor-pointer group overflow-hidden"
@@ -780,7 +787,7 @@ export default function Home() {
                         <div className="bg-gradient-to-r from-slate-50 to-blue-50/50 p-5">
                           <div className="flex items-start gap-3">
                             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform">
-                              <BookOpen className="w-6 h-6 text-white" />
+                              <span className="text-lg font-bold text-white">{classNumber}</span>
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2">
@@ -865,16 +872,12 @@ export default function Home() {
 
         <main className="max-w-4xl mx-auto px-4 py-6">
           <Tabs defaultValue="content" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3 bg-white border border-slate-200 p-1 rounded-xl">
+            <TabsList className="grid w-full grid-cols-2 bg-white border border-slate-200 p-1 rounded-xl">
               <TabsTrigger value="content" className="gap-1.5 rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
                 <BookOpen className="w-4 h-4" />
                 <span className="hidden sm:inline">Contenido</span>
-              </TabsTrigger>
-              <TabsTrigger value="media" className="gap-1.5 rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
-                <Video className="w-4 h-4" />
-                <span className="hidden sm:inline">Media</span>
                 {(selectedClass.documentName || selectedClass.videoUrl) && (
-                  <Badge className="ml-1 text-xs bg-blue-100 text-blue-600 border-0 h-5">Nuevo</Badge>
+                  <Badge className="ml-1 text-xs bg-red-100 text-red-600 border-0 h-5">+Media</Badge>
                 )}
               </TabsTrigger>
               <TabsTrigger value="exercises" className="gap-1.5 rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
@@ -906,21 +909,9 @@ export default function Home() {
                   </div>
                 </Card>
 
-                <Card className="border-slate-200/60 shadow-sm">
-                  <CardContent className="p-5 sm:p-8">
-                    <div className="markdown-content">
-                      <ReactMarkdown>{selectedClass.content}</ReactMarkdown>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* Media Tab */}
-            <TabsContent value="media">
-              <div className="space-y-4">
+                {/* Video inline - show directly in content tab */}
                 {selectedClass.videoUrl && (
-                  <Card className="border-slate-200/60 shadow-sm overflow-hidden">
+                  <Card className="border-slate-200/60 shadow-md overflow-hidden">
                     <CardContent className="p-0">
                       {youtubeEmbed ? (
                         <div className="bg-slate-900 p-1">
@@ -930,7 +921,6 @@ export default function Home() {
                               className="absolute inset-0 w-full h-full rounded-t-lg"
                               allowFullScreen
                               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                              referrerPolicy="no-referrer"
                             />
                           </div>
                         </div>
@@ -944,71 +934,63 @@ export default function Home() {
                           className="w-full rounded-t-lg max-h-[500px] bg-black"
                         />
                       )}
-                      <div className="p-4 flex items-center justify-between border-t border-slate-100">
-                        <div className="flex items-center gap-2">
-                          <PlayCircle className="w-4 h-4 text-blue-500" />
-                          <span className="text-sm font-medium text-slate-700">Video de la clase</span>
-                        </div>
-                        {selectedClass.videoUrl && (
-                          <a href={selectedClass.videoUrl} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs text-slate-600 transition-colors">
-                            <ExternalLink className="w-3 h-3" /> Abrir en nueva pestana
-                          </a>
-                        )}
+                      <div className="p-3 flex items-center gap-2 border-t border-slate-100">
+                        <PlayCircle className="w-4 h-4 text-red-500" />
+                        <span className="text-sm font-medium text-slate-700">Video de la clase</span>
+                        <a href={selectedClass.videoUrl} target="_blank" rel="noopener noreferrer"
+                          className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                          <ExternalLink className="w-3 h-3" /> YouTube
+                        </a>
                       </div>
                     </CardContent>
                   </Card>
                 )}
 
+                {/* Document inline - show directly in content tab */}
                 {selectedClass.documentName && selectedClass.documentUrl && (() => {
                   const docApiUrl = `/api/classes/${selectedClass.id}/document`;
                   return (
-                    <Card className="border-slate-200/60 shadow-sm overflow-hidden">
+                    <Card className="border-slate-200/60 shadow-md overflow-hidden">
                       <CardContent className="p-0">
                         {isPdf ? (
-                          <div className="relative w-full h-[600px] bg-slate-100">
+                          <div className="relative w-full h-[500px] bg-slate-100">
                             <iframe src={docApiUrl} className="absolute inset-0 w-full h-full" title={selectedClass.documentName} />
                           </div>
                         ) : isImage ? (
                           <div className="p-4">
-                            <img src={docApiUrl} alt={selectedClass.documentName} className="w-full rounded-lg max-h-[500px] object-contain bg-slate-50 p-2" />
+                            <img src={selectedClass.documentUrl} alt={selectedClass.documentName} className="w-full rounded-lg max-h-[400px] object-contain bg-slate-50 p-2" />
                           </div>
                         ) : (
-                          <div className="p-6 text-center">
-                            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                          <div className="p-5 flex items-center gap-4">
+                            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0">
                               <span className="text-3xl">{getFileIcon(selectedClass.documentName)}</span>
                             </div>
-                            <p className="font-medium text-slate-700">{selectedClass.documentName}</p>
-                            <p className="text-sm text-slate-400 mt-1">Vista previa no disponible. Descarga para ver.</p>
-                            <a href={docApiUrl} download={selectedClass.documentName} className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-slate-700 truncate">{selectedClass.documentName}</p>
+                              <p className="text-sm text-slate-400">Documento adjunto de la clase</p>
+                            </div>
+                            <a href={docApiUrl} download={selectedClass.documentName}
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shrink-0">
                               <ExternalLink className="w-4 h-4" /> Descargar
                             </a>
                           </div>
                         )}
-                        <div className="p-4 flex items-center justify-between border-t border-slate-100">
-                          <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-blue-500" />
-                            <span className="text-sm font-medium text-slate-700">{selectedClass.documentName}</span>
-                          </div>
-                          <a href={docApiUrl} download={selectedClass.documentName}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs text-slate-600 transition-colors">
-                            <ExternalLink className="w-3 h-3" /> Descargar
-                          </a>
+                        <div className="p-3 flex items-center gap-2 border-t border-slate-100">
+                          <FileText className="w-4 h-4 text-blue-500" />
+                          <span className="text-sm font-medium text-slate-700">{selectedClass.documentName}</span>
                         </div>
                       </CardContent>
                     </Card>
                   );
                 })()}
 
-                {!selectedClass.videoUrl && !selectedClass.documentName && (
-                  <Card className="border-slate-200/60 shadow-sm">
-                    <CardContent className="p-10 text-center">
-                      <Video className="w-14 h-14 text-slate-200 mx-auto mb-3" />
-                      <p className="text-slate-500 font-medium">No hay material multimedia</p>
-                      <p className="text-sm text-slate-400 mt-1">El profesor aun no ha subido documentos o videos</p>
-                    </CardContent>
-                  </Card>
-                )}
+                <Card className="border-slate-200/60 shadow-sm">
+                  <CardContent className="p-5 sm:p-8">
+                    <div className="markdown-content">
+                      <ReactMarkdown>{selectedClass.content}</ReactMarkdown>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
 
