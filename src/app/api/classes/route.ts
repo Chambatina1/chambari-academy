@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Solo profesores pueden crear clases' }, { status: 403 });
     }
 
-    const { topic, level, language, documentUrl, documentName, videoUrl } = await request.json();
+    const { topic, level, documentUrl, documentName, videoUrl } = await request.json();
 
     if (!topic) {
       return NextResponse.json({ error: 'El tema es obligatorio' }, { status: 400 });
@@ -45,57 +45,121 @@ export async function POST(request: NextRequest) {
 
     const zai = await ZAI.create();
 
-    // Generate class content
+    const levelLabel = level === 'beginner' ? 'beginner (A1-A2)' : level === 'advanced' ? 'advanced (C1-C2)' : 'intermediate (B1-B2)';
+
+    // ============ GENERATE CLASS CONTENT ============
     const contentCompletion = await zai.chat.completions.create({
       messages: [
         {
           role: 'system',
-          content: `Eres un experto educador que crea contenido de clase de alta calidad.
-Genera contenido educativo completo en inglés sobre el tema indicado.
-El contenido debe ser claro, estructurado y fácil de entender.
-Usa formato markdown con encabezados, listas, ejemplos, y tablas cuando sea apropiado.
-Incluye secciones de: Introduction, Key Concepts, Detailed Explanation, Practical Examples, y Summary.
-Nivel: ${level || 'intermedio'}.
-Responde SOLO con el contenido markdown de la clase, sin texto adicional.`
+          content: `You are an expert English teacher who creates visually stunning and highly engaging lesson content.
+
+RULES FOR THE CONTENT:
+1. Write EVERYTHING in English (the lesson content, vocabulary, examples - all in English)
+2. Use markdown formatting extensively to make it visually rich
+3. Include relevant emojis at the start of section headings to make it fun and visual
+4. Create tables for vocabulary lists, comparisons, and grammar rules
+5. Include at least one realistic dialogue between two people using the topic
+6. Add pronunciation tips in parentheses where helpful: word /wɜːrd/
+7. Include fun facts, cultural notes, or tips in blockquotes
+8. Number important lists and use bold for key terms
+9. Make it feel like a premium textbook, not a boring lecture
+
+STRUCTURE (follow this exact order):
+
+## 📚 Learning Objectives
+- List 3-4 clear objectives starting with action verbs
+
+## 🧠 Key Vocabulary
+| Word | Meaning | Example Sentence |
+|------|---------|-----------------|
+| ... | ... | ... |
+
+Include 8-12 vocabulary words related to the topic in a table.
+
+## 📖 Lesson Content
+Write 4-6 detailed subsections about the topic. Each subsection should have:
+- A clear heading with emoji
+- Detailed explanations with examples
+- Grammar rules if applicable
+- Usage tips
+
+## 💬 Real-Life Dialogue
+Create a natural conversation between two people (Anna and Ben) using the vocabulary and concepts from the lesson. Format as dialogue lines with character names in bold.
+
+## 🔑 Grammar Focus (if applicable)
+Explain the grammar rule clearly with:
+- Formula/pattern
+- 5+ example sentences
+- Common mistakes to avoid
+
+## 📝 Practice Tips
+Give 4-5 practical tips for students to practice outside class.
+
+## ⭐ Did You Know?
+Include 2-3 interesting cultural facts or fun trivia related to the topic in blockquotes.
+
+## 📋 Summary
+A brief recap of what was learned.
+
+Level: ${levelLabel}
+Topic: "${topic}"
+
+IMPORTANT: Respond ONLY with the markdown content. No introduction, no "here is your lesson", just the content starting with ## 📚`
         },
         {
           role: 'user',
-          content: `Create a complete English lesson about: "${topic}"`
+          content: `Create a complete, beautiful English lesson about: "${topic}"`
         }
       ],
-      temperature: 0.7,
+      temperature: 0.75,
+      max_tokens: 4096,
     });
 
     const classContent = contentCompletion.choices[0]?.message?.content || '';
 
-    // Generate exercises
+    // ============ GENERATE EXERCISES ============
     const exerciseCompletion = await zai.chat.completions.create({
       messages: [
         {
           role: 'system',
-          content: `You are an expert in creating educational exercises for English language learning.
-Generate exactly 8 varied exercises about the given topic.
-Types: multiple_choice, true_false, fill_blank.
-Respond ONLY with valid JSON in this exact format, no additional text:
+          content: `You are an expert English teacher creating exercises. Generate exactly 10 varied exercises about the topic.
+
+Distribute them as follows:
+- 4 multiple_choice questions
+- 3 true_false questions  
+- 3 fill_blank questions
+
+RULES:
+- Write ALL questions and explanations in English
+- Questions must test understanding of the topic, not just memorization
+- Use realistic sentences and contexts
+- Make options plausible (no obviously wrong answers)
+- Explanations should teach something, not just state the answer
+
+RESPOND ONLY WITH VALID JSON in this exact format:
 [
   {
     "type": "multiple_choice",
-    "question": "Question here",
-    "options": ["Option A", "Option B", "Option C", "Option D"],
-    "correctAnswer": "Option A",
-    "explanation": "Explanation of why this is correct"
+    "question": "Complete the sentence: 'She _____ to school every day.'",
+    "options": ["go", "goes", "going", "gone"],
+    "correctAnswer": "goes",
+    "explanation": "With third person singular (she/he/it), we add -es to the base verb in Present Simple."
   }
 ]
+
 For true_false: options must be ["True", "False"]
-For fill_blank: options must be ["correct answer"] and the question must have _____ where the answer goes.
-Write questions and explanations in English.`
+For fill_blank: options must be ["the correct answer"] and the question must contain _____ where the answer goes. Use interesting sentences, not boring ones.
+
+IMPORTANT: Return ONLY the JSON array. No markdown, no code blocks, no extra text.`
         },
         {
           role: 'user',
-          content: `Generate 8 exercises about: "${topic}" (${level || 'intermediate'})`
+          content: `Generate 10 exercises about: "${topic}" (${levelLabel})`
         }
       ],
       temperature: 0.7,
+      max_tokens: 4096,
     });
 
     let exercises = [];
@@ -107,7 +171,38 @@ Write questions and explanations in English.`
       exercises = [];
     }
 
-    // Create the class
+    // ============ GENERATE VIDEO SUGGESTION (if no video provided) ============
+    let finalVideoUrl = videoUrl || '';
+    if (!finalVideoUrl) {
+      try {
+        const videoCompletion = await zai.chat.completions.create({
+          messages: [
+            {
+              role: 'system',
+              content: `You find the best educational YouTube video for English learning topics.
+Given a topic, respond with ONLY a YouTube search URL that would find relevant educational content.
+Format: https://www.youtube.com/results?search_query=SEARCH_TERMS
+Replace spaces with + in the search query. Use keywords like: "English lesson" + topic name.
+Respond with ONLY the URL, nothing else.`
+            },
+            {
+              role: 'user',
+              content: topic
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 200,
+        });
+        const suggestedUrl = videoCompletion.choices[0]?.message?.content?.trim() || '';
+        if (suggestedUrl.includes('youtube.com')) {
+          finalVideoUrl = suggestedUrl;
+        }
+      } catch {
+        // If video suggestion fails, just continue without it
+      }
+    }
+
+    // ============ CREATE THE CLASS ============
     const newClass = await db.class.create({
       data: {
         teacherId: userData.userId,
@@ -116,7 +211,7 @@ Write questions and explanations in English.`
         content: classContent,
         documentUrl: documentUrl || '',
         documentName: documentName || '',
-        videoUrl: videoUrl || '',
+        videoUrl: finalVideoUrl,
       },
     });
 

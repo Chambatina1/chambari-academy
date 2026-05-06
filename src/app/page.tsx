@@ -90,6 +90,16 @@ const getYoutubeEmbedUrl = (url: string) => {
   return match ? `https://www.youtube.com/embed/${match[1]}` : '';
 };
 
+const isYoutubeSearchUrl = (url: string) => {
+  return url.includes('youtube.com/results');
+};
+
+const getYoutubeSearchUrl = (url: string) => {
+  if (!url) return '';
+  const match = url.match(/search_query=(.+)/);
+  return match ? `https://www.youtube.com/results?search_query=${match[1]}` : url;
+};
+
 const getFileIcon = (filename: string) => {
   const ext = filename.split('.').pop()?.toLowerCase() || '';
   if (['pdf'].includes(ext)) return '📄';
@@ -880,6 +890,7 @@ export default function Home() {
     const answeredCount = Object.keys(studentAnswers).filter(id => studentAnswers[id] !== '').length;
     const totalExercises = selectedClass.exercises?.length || 0;
     const youtubeEmbed = getYoutubeEmbedUrl(selectedClass.videoUrl);
+    const isYtSearch = isYoutubeSearchUrl(selectedClass.videoUrl);
     const isPdf = selectedClass.documentName?.toLowerCase().endsWith('.pdf');
     const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].some(ext => selectedClass.documentName?.toLowerCase().endsWith(`.${ext}`));
 
@@ -932,13 +943,34 @@ export default function Home() {
 
             {/* Content Tab */}
             <TabsContent value="content">
-              <Card className="border-slate-200/60 shadow-sm">
-                <CardContent className="p-5 sm:p-8">
-                  <div className="markdown-content text-slate-700">
-                    <ReactMarkdown>{selectedClass.content}</ReactMarkdown>
+              <div className="space-y-4">
+                {/* Class header banner */}
+                <Card className="border-0 shadow-md overflow-hidden">
+                  <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 p-5 sm:p-6 text-white">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur shrink-0">
+                        <BookOpen className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl sm:text-2xl font-bold">{selectedClass.title}</h2>
+                        <div className="flex items-center gap-3 mt-1 text-blue-100 text-sm">
+                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{formatDate(selectedClass.createdAt)}</span>
+                          <span className="flex items-center gap-1"><Target className="w-3.5 h-3.5" />{totalExercises} exercises</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </Card>
+
+                {/* Lesson content */}
+                <Card className="border-slate-200/60 shadow-sm">
+                  <CardContent className="p-5 sm:p-8">
+                    <div className="markdown-content">
+                      <ReactMarkdown>{selectedClass.content}</ReactMarkdown>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* Media Tab */}
@@ -948,16 +980,29 @@ export default function Home() {
                 {selectedClass.videoUrl && (
                   <Card className="border-slate-200/60 shadow-sm overflow-hidden">
                     <CardContent className="p-0">
-                      <div className="bg-slate-900 p-1">
-                        {youtubeEmbed ? (
+                      {youtubeEmbed ? (
+                        <div className="bg-slate-900 p-1">
                           <div className="relative w-full pt-[56.25%]">
                             <iframe src={youtubeEmbed} className="absolute inset-0 w-full h-full rounded-t-lg" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
                           </div>
-                        ) : (
-                          <video src={selectedClass.videoUrl} controls className="w-full rounded-t-lg max-h-[500px]" />
-                        )}
-                      </div>
-                      <div className="p-4 flex items-center gap-2">
+                        </div>
+                      ) : isYtSearch ? (
+                        <div className="bg-gradient-to-br from-red-50 to-red-100/50 p-8 text-center">
+                          <div className="w-16 h-16 bg-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-200">
+                            <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                          </div>
+                          <p className="font-semibold text-slate-800 text-lg">Recommended Videos</p>
+                          <p className="text-sm text-slate-500 mt-1 mb-4">Watch related videos on YouTube about this topic</p>
+                          <a href={getYoutubeSearchUrl(selectedClass.videoUrl)} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium shadow-md shadow-red-200">
+                            <PlayCircle className="w-5 h-5" /> Watch on YouTube
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        </div>
+                      ) : (
+                        <video src={selectedClass.videoUrl} controls className="w-full rounded-t-lg max-h-[500px]" />
+                      )}
+                      <div className="p-4 flex items-center gap-2 border-t border-slate-100">
                         <PlayCircle className="w-4 h-4 text-blue-500" />
                         <span className="text-sm font-medium text-slate-700">Video Lesson</span>
                       </div>
