@@ -1077,7 +1077,7 @@ export default function Home() {
                   </Card>
                 ) : (
                   <>
-                    {selectedClass.exercises.map((exercise, index) => {
+                    {(selectedClass.exercises || []).map((exercise, index) => {
                       const options = getExerciseOptions(exercise);
                       const isAnswered = showResults && studentAnswers[exercise.id];
                       const isCorrect = isAnswered && studentAnswers[exercise.id] === exercise.correctAnswer;
