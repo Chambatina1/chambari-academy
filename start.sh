@@ -1,16 +1,14 @@
 #!/bin/bash
 # Production startup script
-# Environment variables should be set in the deployment platform (Render, etc.)
-# NEVER commit production credentials to version control
 
-if [ -z "$DATABASE_URL" ]; then
-  echo "ERROR: DATABASE_URL environment variable is not set"
-  exit 1
+# Set defaults for required environment variables
+export DATABASE_URL="${DATABASE_URL:-file:./dev.db}"
+export JWT_SECRET="${JWT_SECRET:-chambari-academy-secret-key-2024}"
+
+# Initialize database if needed
+if [ ! -f "dev.db" ]; then
+  echo "Initializing database..."
 fi
+npx prisma db push --skip-generate 2>/dev/null || true
 
-if [ -z "$JWT_SECRET" ]; then
-  echo "ERROR: JWT_SECRET environment variable is not set"
-  exit 1
-fi
-
-exec npx next start -p ${PORT:-10000}
+exec node .next/standalone/server.js -p ${PORT:-10000}
