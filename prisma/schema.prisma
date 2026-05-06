@@ -3,11 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
-// For Render/production PostgreSQL, change provider to "postgresql" and update DATABASE_URL
 
 model User {
   id        String   @id @default(cuid())
