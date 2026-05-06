@@ -23,7 +23,7 @@ import {
   Trophy, ArrowLeft, Send, Loader2,
   BookMarked, Brain, Target, Zap, Upload, FileText,
   Video, MonitorPlay, PenTool, Plus, X, ExternalLink,
-  Users, PlayCircle, FileUp, Sparkles
+  Users, PlayCircle, FileUp, Sparkles, Lock, LogOut
 } from 'lucide-react';
 
 // ============== TYPES ==============
@@ -127,6 +127,44 @@ export default function Home() {
   const [submittingAnswers, setSubmittingAnswers] = useState(false);
   const [lastScore, setLastScore] = useState<{ score: number; total: number; percentage: number } | null>(null);
   const [isMirrorMode, setIsMirrorMode] = useState(false);
+
+  // Auth state
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('chambari_teacher_auth') === 'true';
+    }
+    return false;
+  });
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const handleLogin = () => {
+    if (passwordInput === 'chambari2024') {
+      setIsAuthenticated(true);
+      setPasswordError('');
+      setPasswordInput('');
+      sessionStorage.setItem('chambari_teacher_auth', 'true');
+    } else {
+      setPasswordError('Contrasena incorrecta');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    sessionStorage.removeItem('chambari_teacher_auth');
+    setRole('STUDENT');
+    setView('student-dashboard');
+  };
+
+  const handleGoToTeacher = () => {
+    if (isAuthenticated) {
+      setRole('TEACHER');
+      setView('teacher-dashboard');
+    } else {
+      setRole('TEACHER');
+      setView('teacher-dashboard');
+    }
+  };
 
   // Load data based on view
   useEffect(() => {
@@ -330,6 +368,62 @@ export default function Home() {
     try { return JSON.parse(exercise.options || '[]'); } catch { return []; }
   };
 
+  // ============== RENDER: LOGIN SCREEN ==============
+  const renderLoginScreen = () => {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center p-4">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}>
+          <Card className="w-full max-w-md shadow-xl border-slate-200/60">
+            <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 p-8 rounded-t-xl">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur mb-4">
+                  <Lock className="w-8 h-8 text-white" />
+                </div>
+                <h1 className="text-2xl font-bold text-white">Acceso Profesor</h1>
+                <p className="text-blue-100 text-sm mt-1">Ingresa la contrasena para continuar</p>
+              </div>
+            </div>
+            <CardContent className="p-8 space-y-5">
+              <div>
+                <Label htmlFor="password" className="text-slate-700 font-medium">Contrasena</Label>
+                <div className="relative mt-2">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Contrasena del profesor"
+                    value={passwordInput}
+                    onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(''); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(); }}
+                    className="pl-10 border-slate-200 focus:border-blue-400 h-12 text-base"
+                    autoFocus
+                  />
+                </div>
+                {passwordError && (
+                  <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                    <XCircle className="w-3.5 h-3.5" />{passwordError}
+                  </p>
+                )}
+              </div>
+              <Button
+                onClick={handleLogin}
+                className="w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-medium text-base shadow-md shadow-blue-500/20"
+              >
+                Ingresar
+              </Button>
+              <button
+                onClick={() => { setRole('STUDENT'); setView('student-dashboard'); }}
+                className="w-full text-center text-sm text-slate-500 hover:text-blue-600 transition-colors"
+              >
+                Entrar como alumno
+              </button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  };
+
   // ============== RENDER: TEACHER DASHBOARD ==============
   const renderTeacherDashboard = () => {
     const totalClasses = teacherClasses.length;
@@ -355,6 +449,11 @@ export default function Home() {
                 <span className="text-sm font-medium text-slate-700">Profesor</span>
                 <Badge className="bg-blue-100 text-blue-700 border-0">Profesor</Badge>
               </div>
+              <button onClick={handleLogout}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-red-500 hover:bg-red-50 text-sm transition-colors">
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Salir</span>
+              </button>
               <button onClick={() => { setRole('STUDENT'); setView('student-dashboard'); }}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-cyan-50 text-sm text-slate-600 hover:text-cyan-600 transition-colors">
                 <GraduationCap className="w-4 h-4" />
@@ -1046,7 +1145,7 @@ export default function Home() {
   // ============== MAIN RENDER ==============
   return (
     <>
-      {view === 'teacher-dashboard' && renderTeacherDashboard()}
+      {view === 'teacher-dashboard' && (isAuthenticated ? renderTeacherDashboard() : renderLoginScreen())}
       {view === 'student-dashboard' && renderStudentDashboard()}
       {view === 'class-view' && renderClassView()}
     </>
