@@ -1,7 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import ZAI from 'z-ai-web-dev-sdk';
 
+// ============ AI HELPER ============
+// Uses DeepSeek API (compatible with OpenAI format)
+const DEEPSEEK_BASE_URL = 'https://api.deepseek.com/v1';
+
+async function aiChat(messages: Array<{ role: string; content: string }>, options?: { temperature?: number; max_tokens?: number }) {
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey) {
+    throw new Error('DEEPSEEK_API_KEY no configurada. Agrega la variable de entorno en Render.');
+  }
+
+  const response = await fetch(`${DEEPSEEK_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages,
+      temperature: options?.temperature ?? 0.7,
+      max_tokens: options?.max_tokens ?? 4096,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`DeepSeek API error ${response.status}: ${errorBody}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0]?.message?.content || '';
+}
+
+// ============ ROUTES ============
 export async function GET(request: NextRequest) {
   try {
     const classes = await db.class.findMany({
@@ -28,13 +61,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'El tema es obligatorio' }, { status: 400 });
     }
 
-    const zai = await ZAI.create();
-
     const levelLabel = level === 'beginner' ? 'beginner (A1-A2)' : level === 'advanced' ? 'advanced (C1-C2)' : 'intermediate (B1-B2)';
 
     // ============ GENERATE CLASS CONTENT ============
-    const contentCompletion = await zai.chat.completions.create({
-      messages: [
+    let classContent = '';
+    try {
+      classContent = await aiChat([
         {
           role: 'system',
           content: `You are an expert English teacher who creates visually stunning and highly engaging lesson content.
@@ -96,16 +128,19 @@ IMPORTANT: Respond ONLY with the markdown content. No introduction, no "here is 
           role: 'user',
           content: `Create a complete, beautiful English lesson about: "${topic}"`
         }
-      ],
-      temperature: 0.75,
-      max_tokens: 4096,
-    });
-
-    const classContent = contentCompletion.choices[0]?.message?.content || '';
+      ], { temperature: 0.75, max_tokens: 4096 });
+    } catch (error) {
+      console.error('Content generation error:', error);
+      return NextResponse.json({
+        error: 'Error al generar el contenido con IA. Verifica la API key de DeepSeek.',
+        detail: String(error),
+      }, { status: 503 });
+    }
 
     // ============ GENERATE EXERCISES ============
-    const exerciseCompletion = await zai.chat.completions.create({
-      messages: [
+    let exercises: Array<Record<string, unknown>> = [];
+    try {
+      const rawExercises = await aiChat([
         {
           role: 'system',
           content: `You are an expert English teacher creating exercises. Generate exactly 10 varied exercises about the topic.
@@ -142,48 +177,38 @@ IMPORTANT: Return ONLY the JSON array. No markdown, no code blocks, no extra tex
           role: 'user',
           content: `Generate 10 exercises about: "${topic}" (${levelLabel})${customInstructions ? `\nTeacher notes: ${customInstructions}` : ''}`
         }
-      ],
-      temperature: 0.7,
-      max_tokens: 4096,
-    });
+      ], { temperature: 0.7, max_tokens: 4096 });
 
-    let exercises = [];
-    try {
-      const rawExercises = exerciseCompletion.choices[0]?.message?.content || '[]';
       const jsonMatch = rawExercises.match(/\[[\s\S]*\]/);
       exercises = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
-    } catch {
-      exercises = [];
+    } catch (error) {
+      console.error('Exercise generation error (continuing without exercises):', error);
     }
 
-    // ============ GENERATE VIDEO SUGGESTION (if no video provided) ============
+    // ============ GENERATE VIDEO SUGGESTION ============
     let finalVideoUrl = videoUrl || '';
     if (!finalVideoUrl) {
       try {
-        const videoCompletion = await zai.chat.completions.create({
-          messages: [
-            {
-              role: 'system',
-              content: `You find the best educational YouTube video for English learning topics.
+        const suggestedUrl = await aiChat([
+          {
+            role: 'system',
+            content: `You find the best educational YouTube video for English learning topics.
 Given a topic, respond with ONLY a YouTube search URL that would find relevant educational content.
 Format: https://www.youtube.com/results?search_query=SEARCH_TERMS
 Replace spaces with + in the search query. Use keywords like: "English lesson" + topic name.
 Respond with ONLY the URL, nothing else.`
-            },
-            {
-              role: 'user',
-              content: topic
-            }
-          ],
-          temperature: 0.3,
-          max_tokens: 200,
-        });
-        const suggestedUrl = videoCompletion.choices[0]?.message?.content?.trim() || '';
+          },
+          {
+            role: 'user',
+            content: topic
+          }
+        ], { temperature: 0.3, max_tokens: 200 });
+
         if (suggestedUrl.includes('youtube.com')) {
-          finalVideoUrl = suggestedUrl;
+          finalVideoUrl = suggestedUrl.trim();
         }
       } catch {
-        // If video suggestion fails, just continue without it
+        // If video suggestion fails, continue without it
       }
     }
 
@@ -223,6 +248,6 @@ Respond with ONLY the URL, nothing else.`
     return NextResponse.json({ class: createdClass });
   } catch (error) {
     console.error('Class creation error:', error);
-    return NextResponse.json({ error: 'Error al crear la clase' }, { status: 500 });
+    return NextResponse.json({ error: 'Error al crear la clase', detail: String(error) }, { status: 500 });
   }
 }
