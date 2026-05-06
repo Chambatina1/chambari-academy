@@ -1,9 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-import crypto from 'crypto';
-
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
 const ALLOWED_EXTENSIONS = [
   'pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx',
@@ -11,7 +6,28 @@ const ALLOWED_EXTENSIONS = [
   'txt', 'csv', 'zip', 'rar',
 ];
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB (base64 will be ~13MB)
+
+const MIME_TYPES: Record<string, string> = {
+  pdf: 'application/pdf',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ppt: 'application/vnd.ms-powerpoint',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  mp4: 'video/mp4',
+  mp3: 'audio/mpeg',
+  txt: 'text/plain',
+  csv: 'text/csv',
+  zip: 'application/zip',
+  rar: 'application/vnd.rar',
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'El archivo es demasiado grande (máximo 50MB)' }, { status: 400 });
+      return NextResponse.json({ error: 'El archivo es demasiado grande (máximo 10MB)' }, { status: 400 });
     }
 
     const ext = file.name.split('.').pop()?.toLowerCase() || '';
@@ -31,22 +47,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tipo de archivo no permitido' }, { status: 400 });
     }
 
-    // Ensure uploads directory exists
-    await fs.mkdir(UPLOAD_DIR, { recursive: true });
-
-    // Generate unique filename
-    const uniqueName = `${crypto.randomUUID()}.${ext}`;
-    const filePath = path.join(UPLOAD_DIR, uniqueName);
-
-    // Write file
+    // Convert file to base64 data URL (stored in DB, survives deploys)
     const bytes = await file.arrayBuffer();
-    await fs.writeFile(filePath, Buffer.from(bytes));
+    const buffer = Buffer.from(bytes);
+    const base64 = buffer.toString('base64');
+    const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
+    const dataUrl = `data:${mimeType};base64,${base64}`;
 
     return NextResponse.json({
-      url: `/api/files/${uniqueName}`,
+      url: dataUrl,
       filename: file.name,
       originalName: file.name,
       size: file.size,
+      mimeType,
     });
   } catch (error) {
     console.error('Upload error:', error);

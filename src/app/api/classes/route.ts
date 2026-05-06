@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// Allow large bodies for base64 document data
+export const maxDuration = 60;
+
 // ============ AI HELPER ============
 // Uses DeepSeek API (compatible with OpenAI format)
 const DEEPSEEK_BASE_URL = 'https://api.deepseek.com/v1';
