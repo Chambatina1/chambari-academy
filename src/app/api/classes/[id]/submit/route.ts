@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 
 export async function POST(
@@ -7,11 +6,6 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userData = getUserFromRequest(request);
-    if (!userData || userData.role !== 'STUDENT') {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    }
-
     const { id: classId } = await params;
     const { answers } = await request.json(); // { exerciseId: selectedAnswer }
 
@@ -35,12 +29,12 @@ export async function POST(
     const progress = await db.progress.upsert({
       where: {
         studentId_classId: {
-          studentId: userData.userId,
+          studentId: 'default-student',
           classId,
         },
       },
       create: {
-        studentId: userData.userId,
+        studentId: 'default-student',
         classId,
         score,
         totalQuestions,

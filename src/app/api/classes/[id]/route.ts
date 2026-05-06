@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 
 export async function GET(
@@ -7,11 +6,6 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userData = getUserFromRequest(request);
-    if (!userData) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
     const { id } = await params;
 
     const cls = await db.class.findUnique({
@@ -19,18 +13,14 @@ export async function GET(
       include: {
         exercises: { orderBy: { orderIndex: 'asc' } },
         teacher: { select: { name: true } },
-        progress: userData.role === 'STUDENT'
-          ? { where: { studentId: userData.userId } }
-          : false,
+        progress: {
+          where: { studentId: 'default-student' },
+        },
       },
     });
 
     if (!cls) {
       return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 });
-    }
-
-    if (userData.role === 'STUDENT' && !cls.published) {
-      return NextResponse.json({ error: 'Esta clase no está disponible' }, { status: 403 });
     }
 
     return NextResponse.json({ class: cls });
@@ -45,16 +35,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userData = getUserFromRequest(request);
-    if (!userData || userData.role !== 'TEACHER') {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    }
-
     const { id } = await params;
     const { documentUrl, documentName, videoUrl } = await request.json();
 
     const cls = await db.class.findUnique({ where: { id } });
-    if (!cls || cls.teacherId !== userData.userId) {
+    if (!cls) {
       return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 });
     }
 
@@ -79,15 +64,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userData = getUserFromRequest(request);
-    if (!userData || userData.role !== 'TEACHER') {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    }
-
     const { id } = await params;
 
     const cls = await db.class.findUnique({ where: { id } });
-    if (!cls || cls.teacherId !== userData.userId) {
+    if (!cls) {
       return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 });
     }
 

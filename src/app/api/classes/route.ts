@@ -1,21 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 import ZAI from 'z-ai-web-dev-sdk';
 
 export async function GET(request: NextRequest) {
   try {
-    const userData = getUserFromRequest(request);
-    if (!userData) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const where = userData.role === 'TEACHER'
-      ? { teacherId: userData.userId }
-      : { published: true };
-
     const classes = await db.class.findMany({
-      where,
+      where: { published: true },
       orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { exercises: true, progress: true } },
@@ -32,11 +22,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const userData = getUserFromRequest(request);
-    if (!userData || userData.role !== 'TEACHER') {
-      return NextResponse.json({ error: 'Solo profesores pueden crear clases' }, { status: 403 });
-    }
-
     const { topic, level, documentUrl, documentName, videoUrl } = await request.json();
 
     if (!topic) {
@@ -205,7 +190,7 @@ Respond with ONLY the URL, nothing else.`
     // ============ CREATE THE CLASS ============
     const newClass = await db.class.create({
       data: {
-        teacherId: userData.userId,
+        teacherId: 'default-teacher',
         title: topic,
         topic: topic,
         content: classContent,

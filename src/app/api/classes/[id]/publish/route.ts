@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 
 export async function PUT(
@@ -7,16 +6,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userData = getUserFromRequest(request);
-    if (!userData || userData.role !== 'TEACHER') {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    }
-
     const { id } = await params;
     const { published } = await request.json();
 
     const cls = await db.class.findUnique({ where: { id } });
-    if (!cls || cls.teacherId !== userData.userId) {
+    if (!cls) {
       return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 });
     }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
@@ -14,30 +14,20 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  BookOpen, GraduationCap, LogOut, Eye, Trash2,
+  BookOpen, GraduationCap, Eye, Trash2,
   CheckCircle2, XCircle, Clock,
-  BarChart3, Trophy, ArrowLeft, Send, Loader2,
+  Trophy, ArrowLeft, Send, Loader2,
   BookMarked, Brain, Target, Zap, Upload, FileText,
   Video, MonitorPlay, PenTool, Plus, X, ExternalLink,
   Users, PlayCircle, FileUp
 } from 'lucide-react';
 
 // ============== TYPES ==============
-type UserRole = 'TEACHER' | 'STUDENT';
-type View = 'auth' | 'teacher-dashboard' | 'student-dashboard' | 'class-view';
-type AuthView = 'login' | 'register';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-}
+type View = 'teacher-dashboard' | 'student-dashboard' | 'class-view';
 
 interface Exercise {
   id: string;
@@ -67,12 +57,10 @@ interface ClassItem {
 
 // ============== HELPERS ==============
 const api = (path: string, options: RequestInit = {}) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('chambari_token') : null;
   return fetch(path, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
@@ -114,29 +102,8 @@ const getFileIcon = (filename: string) => {
 
 // ============== MAIN APP ==============
 export default function Home() {
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('chambari_user');
-        return saved ? JSON.parse(saved) : null;
-      } catch { return null; }
-    }
-    return null;
-  });
-  const [view, setView] = useState<View>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('chambari_user');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          return parsed.role === 'TEACHER' ? 'teacher-dashboard' : 'student-dashboard';
-        }
-      } catch {}
-    }
-    return 'auth';
-  });
-  const [authView, setAuthView] = useState<AuthView>('login');
-  const [authLoading, setAuthLoading] = useState(false);
+  const [role, setRole] = useState<'TEACHER' | 'STUDENT'>('TEACHER');
+  const [view, setView] = useState<View>('teacher-dashboard');
 
   // Teacher state
   const [teacherClasses, setTeacherClasses] = useState<ClassItem[]>([]);
@@ -199,73 +166,14 @@ export default function Home() {
     return () => { cancelled = true; };
   }, [view]);
 
-  // ============== AUTH ==============
-  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    setAuthLoading(true);
-    try {
-      const res = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
-      const data = await res.json();
-      if (res.ok) {
-        localStorage.setItem('chambari_token', data.token);
-        localStorage.setItem('chambari_user', JSON.stringify(data.user));
-        setUser(data.user);
-        setView(data.user.role === 'TEACHER' ? 'teacher-dashboard' : 'student-dashboard');
-        toast.success(`Bienvenido/a, ${data.user.name}`);
-      } else {
-        toast.error(data.error || 'Error al iniciar sesión');
-      }
-    } catch { toast.error('Error de conexión'); }
-    setAuthLoading(false);
-  };
-
-  const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const name = formData.get('name') as string;
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const role = formData.get('role') as UserRole;
-    setAuthLoading(true);
-    try {
-      const res = await api('/api/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password, role }) });
-      const data = await res.json();
-      if (res.ok) {
-        localStorage.setItem('chambari_token', data.token);
-        localStorage.setItem('chambari_user', JSON.stringify(data.user));
-        setUser(data.user);
-        setView(data.user.role === 'TEACHER' ? 'teacher-dashboard' : 'student-dashboard');
-        toast.success(`Cuenta creada. Bienvenido/a, ${data.user.name}`);
-      } else { toast.error(data.error || 'Error al registrar'); }
-    } catch { toast.error('Error de conexión'); }
-    setAuthLoading(false);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('chambari_token');
-    localStorage.removeItem('chambari_user');
-    setUser(null);
-    setView('auth');
-    setSelectedClass(null);
-    setTeacherClasses([]);
-    setStudentClasses([]);
-    setIsMirrorMode(false);
-    toast.success('Sesión cerrada');
-  };
-
   // ============== FILE UPLOAD ==============
   const handleFileUpload = async (file: File) => {
     setUploadingFile(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const token = localStorage.getItem('chambari_token');
       const res = await fetch('/api/upload', {
         method: 'POST',
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: formData,
       });
       const data = await res.json();
@@ -361,10 +269,8 @@ export default function Home() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const token = localStorage.getItem('chambari_token');
       const res = await fetch('/api/upload', {
         method: 'POST',
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: formData,
       });
       const data = await res.json();
@@ -421,91 +327,6 @@ export default function Home() {
     try { return JSON.parse(exercise.options || '[]'); } catch { return []; }
   };
 
-  // ============== RENDER: AUTH PAGE ==============
-  const renderAuthPage = () => (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
-      <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }}
-            className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
-            <GraduationCap className="w-10 h-10 text-white" />
-          </motion.div>
-          <h1 className="text-3xl font-bold text-white">Chambari Academy</h1>
-          <p className="text-blue-200 mt-2">English Learning Platform</p>
-        </div>
-
-        <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur">
-          <CardHeader className="pb-2">
-            <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
-              <button onClick={() => setAuthView('login')}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${authView === 'login' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
-                Iniciar Sesión
-              </button>
-              <button onClick={() => setAuthView('register')}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${authView === 'register' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
-                Registrarse
-              </button>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <AnimatePresence mode="wait">
-              {authView === 'login' ? (
-                <motion.form key="login" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }} onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Correo electrónico</Label>
-                    <Input id="login-email" name="email" type="email" placeholder="tu@correo.com" required className="h-11" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Contraseña</Label>
-                    <Input id="login-password" name="password" type="password" placeholder="••••••••" required className="h-11" />
-                  </div>
-                  <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-medium" disabled={authLoading}>
-                    {authLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    Iniciar Sesión
-                  </Button>
-                </motion.form>
-              ) : (
-                <motion.form key="register" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} onSubmit={handleRegister} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-name">Nombre completo</Label>
-                    <Input id="reg-name" name="name" placeholder="Tu nombre" required className="h-11" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-email">Correo electrónico</Label>
-                    <Input id="reg-email" name="email" type="email" placeholder="tu@correo.com" required className="h-11" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-password">Contraseña</Label>
-                    <Input id="reg-password" name="password" type="password" placeholder="Mínimo 6 caracteres" required minLength={6} className="h-11" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Soy...</Label>
-                    <RadioGroup name="role" defaultValue="STUDENT" className="grid grid-cols-2 gap-3">
-                      <label className="flex items-center justify-center gap-2 p-3 border-2 rounded-xl cursor-pointer transition-all hover:border-blue-300 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
-                        <RadioGroupItem value="STUDENT" />
-                        <GraduationCap className="w-4 h-4" />
-                        <span className="text-sm font-medium">Alumno</span>
-                      </label>
-                      <label className="flex items-center justify-center gap-2 p-3 border-2 rounded-xl cursor-pointer transition-all hover:border-cyan-300 has-[:checked]:border-cyan-500 has-[:checked]:bg-cyan-50">
-                        <RadioGroupItem value="TEACHER" />
-                        <BookOpen className="w-4 h-4" />
-                        <span className="text-sm font-medium">Profesor</span>
-                      </label>
-                    </RadioGroup>
-                  </div>
-                  <Button type="submit" className="w-full h-11 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-medium" disabled={authLoading}>
-                    {authLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    Crear Cuenta
-                  </Button>
-                </motion.form>
-              )}
-            </AnimatePresence>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </div>
-  );
-
   // ============== RENDER: TEACHER DASHBOARD ==============
   const renderTeacherDashboard = () => {
     const totalClasses = teacherClasses.length;
@@ -528,12 +349,14 @@ export default function Home() {
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                   <BookOpen className="w-4 h-4 text-blue-600" />
                 </div>
-                <span className="text-sm font-medium text-slate-700">{user?.name}</span>
+                <span className="text-sm font-medium text-slate-700">Profesor</span>
                 <Badge className="bg-blue-100 text-blue-700 border-0">Profesor</Badge>
               </div>
-              <Button variant="ghost" size="icon" onClick={handleLogout} className="text-slate-500">
-                <LogOut className="w-4 h-4" />
-              </Button>
+              <button onClick={() => { setRole('STUDENT'); setView('student-dashboard'); }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-cyan-50 text-sm text-slate-600 hover:text-cyan-600 transition-colors">
+                <GraduationCap className="w-4 h-4" />
+                <span className="hidden sm:inline">Ver como Alumno</span>
+              </button>
             </div>
           </div>
         </header>
@@ -771,11 +594,13 @@ export default function Home() {
                 <div className="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center">
                   <GraduationCap className="w-4 h-4 text-cyan-600" />
                 </div>
-                <span className="text-sm font-medium text-slate-700">{user?.name}</span>
+                <span className="text-sm font-medium text-slate-700">Alumno</span>
               </div>
-              <Button variant="ghost" size="icon" onClick={handleLogout} className="text-slate-500">
-                <LogOut className="w-4 h-4" />
-              </Button>
+              <button onClick={() => { setRole('TEACHER'); setView('teacher-dashboard'); }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-blue-50 text-sm text-slate-600 hover:text-blue-600 transition-colors">
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">Modo Profesor</span>
+              </button>
             </div>
           </div>
         </header>
@@ -789,7 +614,7 @@ export default function Home() {
                   <Brain className="w-7 h-7" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-2xl font-bold">Hello, {user?.name?.split(' ')[0]}!</h2>
+                  <h2 className="text-2xl font-bold">Hello, Alumno!</h2>
                   <p className="text-blue-100 mt-0.5">Keep learning English today</p>
                 </div>
                 <div className="text-right hidden sm:block shrink-0">
@@ -902,7 +727,7 @@ export default function Home() {
             <Button variant="ghost" size="icon" onClick={() => {
               setSelectedClass(null);
               setIsMirrorMode(false);
-              setView(user?.role === 'TEACHER' ? 'teacher-dashboard' : 'student-dashboard');
+              setView(role === 'TEACHER' ? 'teacher-dashboard' : 'student-dashboard');
             }} className="text-slate-500">
               <ArrowLeft className="w-4 h-4" />
             </Button>
@@ -1099,48 +924,53 @@ export default function Home() {
                                   )}
                                 </div>
                                 <div className="flex-1 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="secondary" className="text-xs">
+                                      {exercise.type === 'multiple_choice' ? 'Multiple Choice' :
+                                       exercise.type === 'true_false' ? 'True / False' : 'Fill in the Blank'}
+                                    </Badge>
+                                  </div>
                                   <p className="font-medium text-slate-800">{exercise.question}</p>
 
-                                  {exercise.type === 'fill_blank' ? (
-                                    <Input value={studentAnswers[exercise.id] || ''}
-                                      onChange={(e) => setStudentAnswers(prev => ({ ...prev, [exercise.id]: e.target.value }))}
-                                      placeholder="Type your answer..."
-                                      disabled={showResults || isMirrorMode}
-                                      className={isAnswered ? (isCorrect ? 'border-emerald-300 bg-white' : 'border-red-300 bg-white') : 'border-slate-200'} />
-                                  ) : (
-                                    <RadioGroup value={studentAnswers[exercise.id] || ''}
-                                      onValueChange={(value) => !showResults && !isMirrorMode && setStudentAnswers(prev => ({ ...prev, [exercise.id]: value }))}
-                                      disabled={showResults || isMirrorMode}>
-                                      <div className="space-y-2">
-                                        {options.map((option: string, optIdx: number) => {
-                                          const isSelected = studentAnswers[exercise.id] === option;
-                                          const isCorrectOption = showResults && option === exercise.correctAnswer;
-                                          const isWrongSelected = showResults && isSelected && option !== exercise.correctAnswer;
-
-                                          return (
-                                            <label key={optIdx}
-                                              className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                                                isCorrectOption ? 'border-emerald-400 bg-emerald-50'
-                                                  : isWrongSelected ? 'border-red-400 bg-red-50'
-                                                    : isSelected ? 'border-blue-400 bg-blue-50'
-                                                      : 'border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50'
-                                              } ${showResults || isMirrorMode ? 'pointer-events-none' : ''}`}>
-                                              <RadioGroupItem value={option} />
-                                              <span className="text-sm text-slate-700">{option}</span>
-                                              {isCorrectOption && <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto" />}
-                                              {isWrongSelected && <XCircle className="w-4 h-4 text-red-500 ml-auto" />}
-                                            </label>
-                                          );
-                                        })}
-                                      </div>
-                                    </RadioGroup>
+                                  {/* Multiple Choice & True/False */}
+                                  {(exercise.type === 'multiple_choice' || exercise.type === 'true_false') && (
+                                    <div className="grid gap-2">
+                                      {options.map((option: string) => {
+                                        const isSelected = studentAnswers[exercise.id] === option;
+                                        const isCorrectOption = showResults && option === exercise.correctAnswer;
+                                        return (
+                                          <button key={option} disabled={showResults}
+                                            onClick={() => { if (!showResults) setStudentAnswers(prev => ({ ...prev, [exercise.id]: option })); }}
+                                            className={`w-full text-left p-3 rounded-xl border-2 transition-all text-sm ${
+                                              isCorrectOption ? 'border-emerald-500 bg-emerald-50 text-emerald-800' :
+                                              isSelected && !isCorrect ? 'border-red-500 bg-red-50 text-red-800' :
+                                              isSelected ? 'border-blue-500 bg-blue-50 text-blue-800' :
+                                              'border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 text-slate-700'
+                                            }`}>
+                                            {option}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
                                   )}
 
-                                  {showResults && exercise.explanation && (
-                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
-                                      className={`p-3 rounded-xl text-sm ${isCorrect ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-                                      <p className="font-semibold mb-0.5">{isCorrect ? 'Correct!' : 'Incorrect'}</p>
-                                      <p>{exercise.explanation}</p>
+                                  {/* Fill in the blank */}
+                                  {exercise.type === 'fill_blank' && (
+                                    <Input
+                                      placeholder="Type your answer..."
+                                      value={studentAnswers[exercise.id] || ''}
+                                      onChange={(e) => setStudentAnswers(prev => ({ ...prev, [exercise.id]: e.target.value }))}
+                                      disabled={showResults}
+                                      className={`border-2 ${isCorrect ? 'border-emerald-500 bg-emerald-50' : isAnswered && !isCorrect ? 'border-red-500 bg-red-50' : 'border-slate-200'}`}
+                                    />
+                                  )}
+
+                                  {/* Explanation */}
+                                  {isAnswered && exercise.explanation && (
+                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-3 bg-blue-50 rounded-xl border border-blue-200">
+                                      <p className="text-sm text-blue-800">
+                                        <span className="font-semibold">Explanation: </span>{exercise.explanation}
+                                      </p>
                                     </motion.div>
                                   )}
                                 </div>
@@ -1152,68 +982,56 @@ export default function Home() {
                     })}
 
                     {/* Submit / Results */}
-                    {!showResults && !isMirrorMode && (
-                      <Button onClick={handleSubmitAnswers} disabled={submittingAnswers || answeredCount < totalExercises}
-                        className="w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-medium shadow-md shadow-blue-500/20"
+                    {!showResults ? (
+                      <Button onClick={handleSubmitAnswers} disabled={submittingAnswers || answeredCount === 0 || isMirrorMode}
+                        className="w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-medium text-base shadow-md shadow-blue-500/20"
                         size="lg">
-                        {submittingAnswers ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Sending...</> : <><Send className="w-4 h-4 mr-2" />Submit Answers ({answeredCount}/{totalExercises})</>}
-                      </Button>
-                    )}
-
-                    {showResults && lastScore && (
-                      <div className="space-y-4">
-                        <Card className="border-0 shadow-lg overflow-hidden">
-                          <div className={`p-8 text-center text-white ${lastScore.percentage >= 70 ? 'bg-gradient-to-br from-emerald-500 to-emerald-600' : lastScore.percentage >= 50 ? 'bg-gradient-to-br from-amber-500 to-amber-600' : 'bg-gradient-to-br from-red-500 to-red-600'}`}>
-                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }}
-                              className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur">
-                              <Trophy className="w-10 h-10" />
-                            </motion.div>
-                            <p className="text-5xl font-bold">{lastScore.percentage}%</p>
-                            <p className="text-white/80 mt-1">{lastScore.score} of {lastScore.total} correct</p>
-                            <p className="mt-3 text-lg font-medium">
-                              {lastScore.percentage >= 90 ? 'Excellent work!' : lastScore.percentage >= 70 ? 'Great job!' : lastScore.percentage >= 50 ? 'Good effort, keep practicing!' : 'Review the lesson and try again'}
-                            </p>
-                          </div>
-                        </Card>
-                        {!isMirrorMode && (
-                          <div className="flex gap-3">
-                            <Button onClick={() => { setStudentAnswers({}); setShowResults(false); }} variant="outline" className="flex-1 border-slate-200">Reintentar</Button>
-                            <Button onClick={() => { setSelectedClass(null); setIsMirrorMode(false); setView('student-dashboard'); }} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">Back to Classes</Button>
-                          </div>
+                        {submittingAnswers ? (
+                          <><Loader2 className="w-5 h-5 animate-spin mr-2" />Enviando...</>
+                        ) : (
+                          <><Send className="w-5 h-5 mr-2" />Enviar Respuestas ({answeredCount}/{totalExercises})</>
                         )}
-                      </div>
-                    )}
-
-                    {isMirrorMode && (
-                      <div className="p-4 bg-cyan-50 border border-cyan-200 rounded-xl text-center">
-                        <MonitorPlay className="w-5 h-5 text-cyan-600 mx-auto mb-1" />
-                        <p className="text-sm font-medium text-cyan-700">Vista Espejo</p>
-                        <p className="text-xs text-cyan-600">Así es como los alumnos ven esta clase</p>
-                      </div>
+                      </Button>
+                    ) : (
+                      <Card className="border-0 shadow-lg overflow-hidden">
+                        <div className={`p-6 text-white text-center ${lastScore && lastScore.percentage >= 70 ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : lastScore && lastScore.percentage >= 50 ? 'bg-gradient-to-r from-amber-600 to-amber-500' : 'bg-gradient-to-r from-red-600 to-red-500'}`}>
+                          <Trophy className="w-12 h-12 mx-auto mb-3 opacity-90" />
+                          <h3 className="text-2xl font-bold">
+                            {lastScore && lastScore.percentage >= 90 ? '¡Excelente!' :
+                             lastScore && lastScore.percentage >= 70 ? '¡Muy bien!' :
+                             lastScore && lastScore.percentage >= 50 ? '¡Buen intento!' : '¡Sigue practicando!'}
+                          </h3>
+                          <p className="text-lg mt-1 opacity-90">
+                            {lastScore?.score} / {lastScore?.total} correctas ({lastScore?.percentage}%)
+                          </p>
+                          <div className="mt-4 flex items-center justify-center gap-6">
+                            <div className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <CheckCircle2 className="w-5 h-5" />
+                                <span className="text-xl font-bold">{lastScore?.score}</span>
+                              </div>
+                              <p className="text-sm opacity-80">Correctas</p>
+                            </div>
+                            <div className="w-px h-10 bg-white/30" />
+                            <div className="text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <XCircle className="w-5 h-5" />
+                                <span className="text-xl font-bold">{lastScore ? lastScore.total - lastScore.score : 0}</span>
+                              </div>
+                              <p className="text-sm opacity-80">Incorrectas</p>
+                            </div>
+                          </div>
+                          <Button onClick={() => { setShowResults(false); setStudentAnswers({}); }}
+                            className="mt-5 bg-white/20 hover:bg-white/30 text-white border border-white/30">
+                            Intentar de nuevo
+                          </Button>
+                        </div>
+                      </Card>
                     )}
                   </>
                 )}
               </div>
             </TabsContent>
-
-            {/* Results Tab (always last, hidden until submitted) */}
-            {showResults && lastScore && (
-              <TabsContent value="results">
-                <Card className="border-0 shadow-lg overflow-hidden">
-                  <div className={`p-8 text-center text-white ${lastScore.percentage >= 70 ? 'bg-gradient-to-br from-emerald-500 to-emerald-600' : lastScore.percentage >= 50 ? 'bg-gradient-to-br from-amber-500 to-amber-600' : 'bg-gradient-to-br from-red-500 to-red-600'}`}>
-                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }}
-                      className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur">
-                      <Trophy className="w-10 h-10" />
-                    </motion.div>
-                    <p className="text-5xl font-bold">{lastScore.percentage}%</p>
-                    <p className="text-white/80 mt-1">{lastScore.score} of {lastScore.total} correct</p>
-                    <p className="mt-3 text-lg font-medium">
-                      {lastScore.percentage >= 90 ? 'Excellent work!' : lastScore.percentage >= 70 ? 'Great job!' : lastScore.percentage >= 50 ? 'Good effort, keep practicing!' : 'Review the lesson and try again'}
-                    </p>
-                  </div>
-                </Card>
-              </TabsContent>
-            )}
           </Tabs>
         </main>
       </div>
@@ -1223,7 +1041,6 @@ export default function Home() {
   // ============== MAIN RENDER ==============
   return (
     <>
-      {view === 'auth' && renderAuthPage()}
       {view === 'teacher-dashboard' && renderTeacherDashboard()}
       {view === 'student-dashboard' && renderStudentDashboard()}
       {view === 'class-view' && renderClassView()}
