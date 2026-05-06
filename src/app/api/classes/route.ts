@@ -37,8 +37,11 @@ async function aiChat(messages: Array<{ role: string; content: string }>, option
 // ============ ROUTES ============
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const showAll = searchParams.get('all') === 'true';
+
     const classes = await db.class.findMany({
-      where: { published: true },
+      where: showAll ? {} : { published: true },
       orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { exercises: true, progress: true } },

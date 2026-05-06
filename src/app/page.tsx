@@ -133,7 +133,7 @@ export default function Home() {
     let cancelled = false;
     const loadData = async () => {
       if (view === 'teacher-dashboard') {
-        const res = await api('/api/classes');
+        const res = await api('/api/classes?all=true');
         if (res.ok && !cancelled) {
           const data = await res.json();
           setTeacherClasses(data.classes || []);
