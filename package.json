@@ -7,8 +7,8 @@
   },
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
-    "build": "next build",
-    "start": "next start",
+    "build": "npx prisma generate && next build",
+    "start": "npx prisma db push --skip-generate && node -e \"const{PrismaClient}=require('@prisma/client');const db=new PrismaClient();Promise.all([db.user.upsert({where:{email:'profesor@chambari.com'},update:{},create:{id:'default-teacher',email:'profesor@chambari.com',name:'Profesor Chambari',password:'chambari2024',role:'TEACHER'}}),db.user.upsert({where:{email:'alumno@chambari.com'},update:{},create:{id:'default-student',email:'alumno@chambari.com',name:'Alumno Demo',password:'chambari2024',role:'STUDENT'}})]).then(()=>console.log('Users seeded')).catch(()=>{}).finally(()=>db.\\$disconnect())\" && next start",
     "postinstall": "prisma generate",
     "lint": "eslint .",
     "db:push": "prisma db push",
