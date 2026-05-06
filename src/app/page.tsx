@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,7 +23,7 @@ import {
   Trophy, ArrowLeft, Send, Loader2,
   BookMarked, Brain, Target, Zap, Upload, FileText,
   Video, MonitorPlay, PenTool, Plus, X, ExternalLink,
-  Users, PlayCircle, FileUp
+  Users, PlayCircle, FileUp, Sparkles
 } from 'lucide-react';
 
 // ============== TYPES ==============
@@ -116,6 +116,7 @@ export default function Home() {
   const [editClassId, setEditClassId] = useState<string | null>(null);
   const [editVideoUrl, setEditVideoUrl] = useState('');
   const [editUploading, setEditUploading] = useState(false);
+  const [customInstructions, setCustomInstructions] = useState('');
 
   // Student state
   const [studentClasses, setStudentClasses] = useState<ClassItem[]>([]);
@@ -183,7 +184,7 @@ export default function Home() {
       } else {
         toast.error(data.error || 'Error al subir');
       }
-    } catch { toast.error('Error de conexión'); }
+    } catch { toast.error('Error de conexion'); }
     setUploadingFile(false);
   };
 
@@ -200,6 +201,7 @@ export default function Home() {
           documentUrl: uploadedFile?.url || '',
           documentName: uploadedFile?.name || '',
           videoUrl: newVideoUrl || '',
+          customInstructions: customInstructions || '',
         }),
       });
       const data = await res.json();
@@ -208,9 +210,10 @@ export default function Home() {
         setNewTopic('');
         setUploadedFile(null);
         setNewVideoUrl('');
+        setCustomInstructions('');
         setView('teacher-dashboard');
       } else { toast.error(data.error || 'Error al crear la clase'); }
-    } catch { toast.error('Error de conexión'); }
+    } catch { toast.error('Error de conexion'); }
     setCreatingClass(false);
   };
 
@@ -319,7 +322,7 @@ export default function Home() {
         setView('class-view');
         toast.success(`Resultado: ${data.score}/${data.totalQuestions} (${data.percentage}%)`);
       } else { toast.error(data.error || 'Error al enviar'); }
-    } catch { toast.error('Error de conexión'); }
+    } catch { toast.error('Error de conexion'); }
     setSubmittingAnswers(false);
   };
 
@@ -393,7 +396,7 @@ export default function Home() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold">Crear Nueva Clase</h2>
-                  <p className="text-blue-100 text-sm">Escribe el tema y prepara tu clase de inglés</p>
+                  <p className="text-blue-100 text-sm">La IA genera todo el contenido automaticamente</p>
                 </div>
               </div>
             </div>
@@ -418,6 +421,19 @@ export default function Home() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                {/* Custom Instructions for AI */}
+                <div>
+                  <Label htmlFor="instructions" className="text-slate-700 font-medium flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    Instrucciones para la IA (opcional)
+                  </Label>
+                  <Textarea id="instructions"
+                    placeholder="Ej: Enfocarse en conversacion practica, incluir vocabulario de negocios, agregar ejercicios de pronunciacion..."
+                    value={customInstructions} onChange={(e) => setCustomInstructions(e.target.value)}
+                    className="mt-1.5 min-h-[60px] resize-none border-slate-200 focus:border-amber-400 text-sm" />
+                  <p className="text-xs text-slate-400 mt-1">Dile a la IA como quieres que prepare tu clase</p>
                 </div>
 
                 {/* File Upload */}
@@ -459,9 +475,9 @@ export default function Home() {
                   className="w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-medium text-base shadow-md shadow-blue-500/20"
                   size="lg">
                   {creatingClass ? (
-                    <><Loader2 className="w-5 h-5 animate-spin mr-2" />Creando clase...</>
+                    <><Loader2 className="w-5 h-5 animate-spin mr-2" />Creando clase con IA...</>
                   ) : (
-                    <><Plus className="w-5 h-5 mr-2" />Crear Clase</>
+                    <><Sparkles className="w-5 h-5 mr-2" />Crear Clase con IA</>
                   )}
                 </Button>
               </div>
@@ -477,7 +493,7 @@ export default function Home() {
               <Card className="border-slate-200/60 shadow-sm">
                 <CardContent className="p-10 text-center">
                   <BookMarked className="w-14 h-14 text-slate-200 mx-auto mb-3" />
-                  <p className="text-slate-500 font-medium">Aún no has creado ninguna clase</p>
+                  <p className="text-slate-500 font-medium">Aun no has creado ninguna clase</p>
                   <p className="text-sm text-slate-400 mt-1">Usa el formulario de arriba para crear tu primera clase</p>
                 </CardContent>
               </Card>
@@ -614,18 +630,18 @@ export default function Home() {
                   <Brain className="w-7 h-7" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-2xl font-bold">Hello, Alumno!</h2>
-                  <p className="text-blue-100 mt-0.5">Keep learning English today</p>
+                  <h2 className="text-2xl font-bold">Hola, Alumno!</h2>
+                  <p className="text-blue-100 mt-0.5">Sigue aprendiendo hoy</p>
                 </div>
                 <div className="text-right hidden sm:block shrink-0">
                   <p className="text-4xl font-bold">{overallPercentage}%</p>
-                  <p className="text-blue-200 text-sm">Progress</p>
+                  <p className="text-blue-200 text-sm">Progreso</p>
                 </div>
               </div>
               <div className="mt-5">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm text-blue-100">Overall progress</span>
-                  <span className="text-sm font-medium">{completedClasses} / {totalAvailable} classes</span>
+                  <span className="text-sm text-blue-100">Progreso general</span>
+                  <span className="text-sm font-medium">{completedClasses} / {totalAvailable} clases</span>
                 </div>
                 <div className="h-2.5 bg-white/20 rounded-full overflow-hidden">
                   <motion.div initial={{ width: 0 }} animate={{ width: `${overallPercentage}%` }} transition={{ duration: 1, ease: 'easeOut' }}
@@ -638,21 +654,20 @@ export default function Home() {
           {/* Classes Grid */}
           <div>
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-slate-900">
-              <BookOpen className="w-5 h-5" /> Available Classes
+              <BookOpen className="w-5 h-5" /> Clases Disponibles
             </h2>
             {studentClasses.length === 0 ? (
               <Card className="border-slate-200/60 shadow-sm">
                 <CardContent className="p-10 text-center">
                   <BookMarked className="w-14 h-14 text-slate-200 mx-auto mb-3" />
-                  <p className="text-slate-500 font-medium">No classes available yet</p>
-                  <p className="text-sm text-slate-400 mt-1">Your teacher will publish classes soon</p>
+                  <p className="text-slate-500 font-medium">No hay clases disponibles aun</p>
+                  <p className="text-sm text-slate-400 mt-1">Tu profesor publicara clases pronto</p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 {studentClasses.map((cls, index) => {
                   const progress = studentProgress[cls.id];
-                  const hasMedia = cls.documentName || cls.videoUrl;
                   return (
                     <motion.div key={cls.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
                       <Card className="border-slate-200/60 shadow-sm hover:shadow-lg transition-all cursor-pointer group overflow-hidden"
@@ -666,10 +681,10 @@ export default function Home() {
                               <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2">
                                 {cls.title}
                               </h3>
-                              <p className="text-xs text-slate-400 mt-1">by {cls.teacher?.name}</p>
+                              <p className="text-xs text-slate-400 mt-1">por {cls.teacher?.name}</p>
                               <div className="flex items-center gap-2 mt-2 flex-wrap">
                                 <Badge variant="secondary" className="text-xs bg-white border-slate-200 text-slate-500">
-                                  <Target className="w-3 h-3 mr-1" />{cls._count?.exercises || 0} exercises
+                                  <Target className="w-3 h-3 mr-1" />{cls._count?.exercises || 0} ejercicios
                                 </Badge>
                                 {cls.documentName && (
                                   <Badge variant="secondary" className="text-xs bg-white border-slate-200 text-slate-500">
@@ -708,7 +723,7 @@ export default function Home() {
     );
   };
 
-  // ============== RENDER: CLASS VIEW (SHARED - Student + Teacher Mirror) ==============
+  // ============== RENDER: CLASS VIEW ==============
   const renderClassView = () => {
     if (!selectedClass) return null;
 
@@ -721,7 +736,6 @@ export default function Home() {
 
     return (
       <div className="min-h-screen bg-slate-50">
-        {/* Header */}
         <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-slate-200">
           <div className="max-w-4xl mx-auto px-4 h-16 flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => {
@@ -733,7 +747,7 @@ export default function Home() {
             </Button>
             <div className="flex-1 min-w-0">
               <h1 className="font-semibold text-slate-900 truncate">{selectedClass.title}</h1>
-              <p className="text-xs text-slate-400">by {selectedClass.teacher?.name}</p>
+              <p className="text-xs text-slate-400">por {selectedClass.teacher?.name}</p>
             </div>
             {isMirrorMode && (
               <Badge className="bg-cyan-100 text-cyan-700 border-0 gap-1">
@@ -754,7 +768,7 @@ export default function Home() {
                 <Video className="w-4 h-4" />
                 <span className="hidden sm:inline">Media</span>
                 {(selectedClass.documentName || selectedClass.videoUrl) && (
-                  <Badge className="ml-1 text-xs bg-blue-100 text-blue-600 border-0 h-5">New</Badge>
+                  <Badge className="ml-1 text-xs bg-blue-100 text-blue-600 border-0 h-5">Nuevo</Badge>
                 )}
               </TabsTrigger>
               <TabsTrigger value="exercises" className="gap-1.5 rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm">
@@ -769,7 +783,6 @@ export default function Home() {
             {/* Content Tab */}
             <TabsContent value="content">
               <div className="space-y-4">
-                {/* Class header banner */}
                 <Card className="border-0 shadow-md overflow-hidden">
                   <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 p-5 sm:p-6 text-white">
                     <div className="flex items-center gap-3">
@@ -780,14 +793,13 @@ export default function Home() {
                         <h2 className="text-xl sm:text-2xl font-bold">{selectedClass.title}</h2>
                         <div className="flex items-center gap-3 mt-1 text-blue-100 text-sm">
                           <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{formatDate(selectedClass.createdAt)}</span>
-                          <span className="flex items-center gap-1"><Target className="w-3.5 h-3.5" />{totalExercises} exercises</span>
+                          <span className="flex items-center gap-1"><Target className="w-3.5 h-3.5" />{totalExercises} ejercicios</span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </Card>
 
-                {/* Lesson content */}
                 <Card className="border-slate-200/60 shadow-sm">
                   <CardContent className="p-5 sm:p-8">
                     <div className="markdown-content">
@@ -801,7 +813,6 @@ export default function Home() {
             {/* Media Tab */}
             <TabsContent value="media">
               <div className="space-y-4">
-                {/* Video */}
                 {selectedClass.videoUrl && (
                   <Card className="border-slate-200/60 shadow-sm overflow-hidden">
                     <CardContent className="p-0">
@@ -816,11 +827,11 @@ export default function Home() {
                           <div className="w-16 h-16 bg-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-200">
                             <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
                           </div>
-                          <p className="font-semibold text-slate-800 text-lg">Recommended Videos</p>
-                          <p className="text-sm text-slate-500 mt-1 mb-4">Watch related videos on YouTube about this topic</p>
+                          <p className="font-semibold text-slate-800 text-lg">Videos Recomendados</p>
+                          <p className="text-sm text-slate-500 mt-1 mb-4">Mira videos en YouTube sobre este tema</p>
                           <a href={getYoutubeSearchUrl(selectedClass.videoUrl)} target="_blank" rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium shadow-md shadow-red-200">
-                            <PlayCircle className="w-5 h-5" /> Watch on YouTube
+                            <PlayCircle className="w-5 h-5" /> Ver en YouTube
                             <ExternalLink className="w-4 h-4" />
                           </a>
                         </div>
@@ -829,19 +840,18 @@ export default function Home() {
                       )}
                       <div className="p-4 flex items-center gap-2 border-t border-slate-100">
                         <PlayCircle className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-medium text-slate-700">Video Lesson</span>
+                        <span className="text-sm font-medium text-slate-700">Video de la clase</span>
                       </div>
                     </CardContent>
                   </Card>
                 )}
 
-                {/* Document */}
                 {selectedClass.documentName && selectedClass.documentUrl && (
                   <Card className="border-slate-200/60 shadow-sm overflow-hidden">
                     <CardContent className="p-0">
                       {isPdf ? (
                         <div className="relative w-full h-[600px] bg-slate-100">
-                          <iframe src={selectedClass.documentUrl} className="absolute inset-0 w-full h-full" title="Document" />
+                          <iframe src={selectedClass.documentUrl} className="absolute inset-0 w-full h-full" title="Documento" />
                         </div>
                       ) : isImage ? (
                         <div className="p-4">
@@ -853,9 +863,9 @@ export default function Home() {
                             <span className="text-3xl">{getFileIcon(selectedClass.documentName)}</span>
                           </div>
                           <p className="font-medium text-slate-700">{selectedClass.documentName}</p>
-                          <p className="text-sm text-slate-400 mt-1">Preview not available. Download to view.</p>
+                          <p className="text-sm text-slate-400 mt-1">Vista previa no disponible. Descarga para ver.</p>
                           <a href={selectedClass.documentUrl} download className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-                            <ExternalLink className="w-4 h-4" /> Download
+                            <ExternalLink className="w-4 h-4" /> Descargar
                           </a>
                         </div>
                       )}
@@ -872,7 +882,7 @@ export default function Home() {
                     <CardContent className="p-10 text-center">
                       <Video className="w-14 h-14 text-slate-200 mx-auto mb-3" />
                       <p className="text-slate-500 font-medium">No hay material multimedia</p>
-                      <p className="text-sm text-slate-400 mt-1">El profesor aún no ha subido documentos o videos</p>
+                      <p className="text-sm text-slate-400 mt-1">El profesor aun no ha subido documentos o videos</p>
                     </CardContent>
                   </Card>
                 )}
@@ -882,12 +892,11 @@ export default function Home() {
             {/* Exercises Tab */}
             <TabsContent value="exercises">
               <div className="space-y-4">
-                {/* Progress bar */}
                 <Card className="border-slate-200/60 shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-slate-700">Progress</span>
-                      <span className="text-sm text-slate-500">{answeredCount} of {totalExercises} answered</span>
+                      <span className="text-sm font-medium text-slate-700">Progreso</span>
+                      <span className="text-sm text-slate-500">{answeredCount} de {totalExercises} respondidas</span>
                     </div>
                     <Progress value={totalExercises > 0 ? (answeredCount / totalExercises) * 100 : 0} className="h-2" />
                   </CardContent>
@@ -897,7 +906,7 @@ export default function Home() {
                   <Card className="border-slate-200/60 shadow-sm">
                     <CardContent className="p-10 text-center">
                       <Target className="w-14 h-14 text-slate-200 mx-auto mb-3" />
-                      <p className="text-slate-500 font-medium">No exercises available</p>
+                      <p className="text-slate-500 font-medium">No hay ejercicios disponibles</p>
                     </CardContent>
                   </Card>
                 ) : (
@@ -926,13 +935,12 @@ export default function Home() {
                                 <div className="flex-1 space-y-3">
                                   <div className="flex items-center gap-2">
                                     <Badge variant="secondary" className="text-xs">
-                                      {exercise.type === 'multiple_choice' ? 'Multiple Choice' :
-                                       exercise.type === 'true_false' ? 'True / False' : 'Fill in the Blank'}
+                                      {exercise.type === 'multiple_choice' ? 'Seleccion Multiple' :
+                                       exercise.type === 'true_false' ? 'Verdadero / Falso' : 'Completar'}
                                     </Badge>
                                   </div>
                                   <p className="font-medium text-slate-800">{exercise.question}</p>
 
-                                  {/* Multiple Choice & True/False */}
                                   {(exercise.type === 'multiple_choice' || exercise.type === 'true_false') && (
                                     <div className="grid gap-2">
                                       {options.map((option: string) => {
@@ -954,10 +962,9 @@ export default function Home() {
                                     </div>
                                   )}
 
-                                  {/* Fill in the blank */}
                                   {exercise.type === 'fill_blank' && (
                                     <Input
-                                      placeholder="Type your answer..."
+                                      placeholder="Escribe tu respuesta..."
                                       value={studentAnswers[exercise.id] || ''}
                                       onChange={(e) => setStudentAnswers(prev => ({ ...prev, [exercise.id]: e.target.value }))}
                                       disabled={showResults}
@@ -965,11 +972,10 @@ export default function Home() {
                                     />
                                   )}
 
-                                  {/* Explanation */}
                                   {isAnswered && exercise.explanation && (
                                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-3 bg-blue-50 rounded-xl border border-blue-200">
                                       <p className="text-sm text-blue-800">
-                                        <span className="font-semibold">Explanation: </span>{exercise.explanation}
+                                        <span className="font-semibold">Explicacion: </span>{exercise.explanation}
                                       </p>
                                     </motion.div>
                                   )}
@@ -981,7 +987,6 @@ export default function Home() {
                       );
                     })}
 
-                    {/* Submit / Results */}
                     {!showResults ? (
                       <Button onClick={handleSubmitAnswers} disabled={submittingAnswers || answeredCount === 0 || isMirrorMode}
                         className="w-full h-12 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-medium text-base shadow-md shadow-blue-500/20"
@@ -997,9 +1002,9 @@ export default function Home() {
                         <div className={`p-6 text-white text-center ${lastScore && lastScore.percentage >= 70 ? 'bg-gradient-to-r from-emerald-600 to-emerald-500' : lastScore && lastScore.percentage >= 50 ? 'bg-gradient-to-r from-amber-600 to-amber-500' : 'bg-gradient-to-r from-red-600 to-red-500'}`}>
                           <Trophy className="w-12 h-12 mx-auto mb-3 opacity-90" />
                           <h3 className="text-2xl font-bold">
-                            {lastScore && lastScore.percentage >= 90 ? '¡Excelente!' :
-                             lastScore && lastScore.percentage >= 70 ? '¡Muy bien!' :
-                             lastScore && lastScore.percentage >= 50 ? '¡Buen intento!' : '¡Sigue practicando!'}
+                            {lastScore && lastScore.percentage >= 90 ? 'Excelente!' :
+                             lastScore && lastScore.percentage >= 70 ? 'Muy bien!' :
+                             lastScore && lastScore.percentage >= 50 ? 'Buen intento!' : 'Sigue practicando!'}
                           </h3>
                           <p className="text-lg mt-1 opacity-90">
                             {lastScore?.score} / {lastScore?.total} correctas ({lastScore?.percentage}%)

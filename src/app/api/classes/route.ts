@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { topic, level, documentUrl, documentName, videoUrl } = await request.json();
+    const { topic, level, documentUrl, documentName, videoUrl, customInstructions } = await request.json();
 
     if (!topic) {
       return NextResponse.json({ error: 'El tema es obligatorio' }, { status: 400 });
@@ -89,7 +89,7 @@ A brief recap of what was learned.
 
 Level: ${levelLabel}
 Topic: "${topic}"
-
+${customInstructions ? `\nADDITIONAL TEACHER INSTRUCTIONS:\n${customInstructions}\n` : ''}
 IMPORTANT: Respond ONLY with the markdown content. No introduction, no "here is your lesson", just the content starting with ## 📚`
         },
         {
@@ -140,7 +140,7 @@ IMPORTANT: Return ONLY the JSON array. No markdown, no code blocks, no extra tex
         },
         {
           role: 'user',
-          content: `Generate 10 exercises about: "${topic}" (${levelLabel})`
+          content: `Generate 10 exercises about: "${topic}" (${levelLabel})${customInstructions ? `\nTeacher notes: ${customInstructions}` : ''}`
         }
       ],
       temperature: 0.7,

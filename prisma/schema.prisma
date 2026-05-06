@@ -7,6 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// For Render/production PostgreSQL, change provider to "postgresql" and update DATABASE_URL
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -33,9 +35,32 @@ model Class {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  teacher     User     @relation("TeacherClasses", fields: [teacherId], references: [id])
-  exercises   Exercise[]
-  progress    Progress[]
+  teacher      User         @relation("TeacherClasses", fields: [teacherId], references: [id])
+  exercises    Exercise[]
+  progress     Progress[]
+  liveSessions LiveSession[]
+}
+
+model LiveSession {
+  id          String       @id @default(cuid())
+  classId     String
+  teacherId   String       @default("default-teacher")
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  annotations Annotation[]
+}
+
+model Annotation {
+  id          String       @id @default(cuid())
+  sessionId   String
+  content     String
+  type        String       @default("message") // "message", "highlight", "alert"
+  createdAt   DateTime     @default(now())
+
+  session     LiveSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }
 
 model Exercise {

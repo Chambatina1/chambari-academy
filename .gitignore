@@ -71,3 +71,9 @@ public/uploads/*
 
 # Mini-services lock files (regenerated on install)
 mini-services/*/node_modules/
+
+# SQLite local database
+prisma/dev.db
+prisma/dev.db-journal
+*.db
+*.db-journal

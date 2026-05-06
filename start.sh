@@ -24,9 +24,13 @@ fi
 
 echo "App directory: $APP_DIR"
 
-# Copy prisma schema
+# Copy prisma schema and existing database
 mkdir -p "$APP_DIR/prisma"
 cp prisma/schema.prisma "$APP_DIR/prisma/"
+if [ -f "prisma/dev.db" ]; then
+  cp prisma/dev.db "$APP_DIR/prisma/dev.db"
+  echo "Copied existing database"
+fi
 
 # Copy public folder
 if [ -d "public" ]; then
@@ -39,6 +43,12 @@ if [ -d ".next/static" ]; then
   cp -r .next/static/* "$APP_DIR/.next/static/" 2>/dev/null || true
 fi
 
+# Copy uploads folder if exists
+if [ -d "public/uploads" ]; then
+  mkdir -p "$APP_DIR/public/uploads"
+  cp -r public/uploads/* "$APP_DIR/public/uploads/" 2>/dev/null || true
+fi
+
 # Go to app directory
 cd "$APP_DIR"
 
@@ -46,6 +56,30 @@ cd "$APP_DIR"
 echo "Initializing database..."
 npx prisma db push --skip-generate
 echo "Database ready!"
+
+# Seed default users using a simple Node script
+echo "Seeding default users..."
+node -e "
+const { PrismaClient } = require('@prisma/client');
+const db = new PrismaClient();
+async function seed() {
+  const teacher = await db.user.upsert({
+    where: { email: 'profesor@chambari.com' },
+    update: {},
+    create: { id: 'default-teacher', email: 'profesor@chambari.com', name: 'Profesor Chambari', password: 'chambari2024', role: 'TEACHER' }
+  });
+  console.log('Teacher created:', teacher.name);
+  const student = await db.user.upsert({
+    where: { email: 'alumno@chambari.com' },
+    update: {},
+    create: { id: 'default-student', email: 'alumno@chambari.com', name: 'Alumno Demo', password: 'chambari2024', role: 'STUDENT' }
+  });
+  console.log('Student created:', student.name);
+  await db.\$disconnect();
+}
+seed().catch(e => { console.error('Seed error:', e.message); process.exit(0); });
+"
+echo "Seed complete!"
 
 # Start server
 exec node server.js -p ${PORT:-10000}
