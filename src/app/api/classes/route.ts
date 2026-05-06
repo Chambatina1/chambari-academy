@@ -196,19 +196,32 @@ IMPORTANT: Return ONLY the JSON array. No markdown, no code blocks, no extra tex
           {
             role: 'system',
             content: `You find the best educational YouTube video for English learning topics.
-Given a topic, respond with ONLY a YouTube search URL that would find relevant educational content.
-Format: https://www.youtube.com/results?search_query=SEARCH_TERMS
-Replace spaces with + in the search query. Use keywords like: "English lesson" + topic name.
-Respond with ONLY the URL, nothing else.`
+Given a topic, you must respond with ONLY a direct YouTube video URL (a link to a specific video).
+The URL MUST be in one of these formats:
+- https://www.youtube.com/watch?v=VIDEO_ID
+- https://youtu.be/VIDEO_ID
+
+Choose a REAL and popular educational YouTube video about the given topic. Think of well-known English teaching channels like:
+- English with Lucy
+- BBC Learning English
+- Learn English with TV Series
+- Rachel's English
+- mmmEnglish
+- EnglishClass101
+- Oxford Online English
+-engVid
+
+Respond with ONLY the full YouTube video URL, nothing else. Do NOT respond with search URLs or playlists.`
           },
           {
             role: 'user',
-            content: topic
+            content: `Find a specific YouTube video URL for an English lesson about: "${topic}"`
           }
         ], { temperature: 0.3, max_tokens: 200 });
 
-        if (suggestedUrl.includes('youtube.com')) {
-          finalVideoUrl = suggestedUrl.trim();
+        const urlMatch = suggestedUrl.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+        if (urlMatch) {
+          finalVideoUrl = `https://www.youtube.com/watch?v=${urlMatch[1]}`;
         }
       } catch {
         // If video suggestion fails, continue without it

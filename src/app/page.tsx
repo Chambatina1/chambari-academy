@@ -74,18 +74,24 @@ const formatDate = (dateStr: string) => {
 
 const getYoutubeEmbedUrl = (url: string) => {
   if (!url) return '';
-  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  return match ? `https://www.youtube.com/embed/${match[1]}` : '';
+  // Match standard YouTube URLs: watch, embed, v/, youtu.be, shorts
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (match) return `https://www.youtube.com/embed/${match[1]}`;
+  // Match YouTube search URLs and convert to embeddable search playlist
+  const searchMatch = url.match(/search_query=(.+)/);
+  if (searchMatch) return `https://www.youtube.com/embed?listType=search&list=${searchMatch[1]}`;
+  return '';
 };
 
-const isYoutubeSearchUrl = (url: string) => {
-  return url.includes('youtube.com/results');
+const isYoutubeUrl = (url: string) => {
+  if (!url) return false;
+  return /(?:youtube\.com|youtu\.be)/.test(url);
 };
 
-const getYoutubeSearchUrl = (url: string) => {
+const getYoutubeThumbnail = (url: string) => {
   if (!url) return '';
-  const match = url.match(/search_query=(.+)/);
-  return match ? `https://www.youtube.com/results?search_query=${match[1]}` : url;
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg` : '';
 };
 
 const getFileIcon = (filename: string) => {
@@ -829,7 +835,8 @@ export default function Home() {
     const answeredCount = Object.keys(studentAnswers).filter(id => studentAnswers[id] !== '').length;
     const totalExercises = selectedClass.exercises?.length || 0;
     const youtubeEmbed = getYoutubeEmbedUrl(selectedClass.videoUrl);
-    const isYtSearch = isYoutubeSearchUrl(selectedClass.videoUrl);
+    const ytIsVideo = isYoutubeUrl(selectedClass.videoUrl);
+    const ytThumbnail = getYoutubeThumbnail(selectedClass.videoUrl);
     const isPdf = selectedClass.documentName?.toLowerCase().endsWith('.pdf');
     const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].some(ext => selectedClass.documentName?.toLowerCase().endsWith(`.${ext}`));
 
@@ -918,28 +925,36 @@ export default function Home() {
                       {youtubeEmbed ? (
                         <div className="bg-slate-900 p-1">
                           <div className="relative w-full pt-[56.25%]">
-                            <iframe src={youtubeEmbed} className="absolute inset-0 w-full h-full rounded-t-lg" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
+                            <iframe
+                              src={youtubeEmbed}
+                              className="absolute inset-0 w-full h-full rounded-t-lg"
+                              allowFullScreen
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              referrerPolicy="no-referrer"
+                            />
                           </div>
-                        </div>
-                      ) : isYtSearch ? (
-                        <div className="bg-gradient-to-br from-red-50 to-red-100/50 p-8 text-center">
-                          <div className="w-16 h-16 bg-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-200">
-                            <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                          </div>
-                          <p className="font-semibold text-slate-800 text-lg">Videos Recomendados</p>
-                          <p className="text-sm text-slate-500 mt-1 mb-4">Mira videos en YouTube sobre este tema</p>
-                          <a href={getYoutubeSearchUrl(selectedClass.videoUrl)} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium shadow-md shadow-red-200">
-                            <PlayCircle className="w-5 h-5" /> Ver en YouTube
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
                         </div>
                       ) : (
-                        <video src={selectedClass.videoUrl} controls className="w-full rounded-t-lg max-h-[500px]" />
+                        <video
+                          src={selectedClass.videoUrl}
+                          controls
+                          playsInline
+                          preload="metadata"
+                          poster={ytThumbnail || undefined}
+                          className="w-full rounded-t-lg max-h-[500px] bg-black"
+                        />
                       )}
-                      <div className="p-4 flex items-center gap-2 border-t border-slate-100">
-                        <PlayCircle className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-medium text-slate-700">Video de la clase</span>
+                      <div className="p-4 flex items-center justify-between border-t border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <PlayCircle className="w-4 h-4 text-blue-500" />
+                          <span className="text-sm font-medium text-slate-700">Video de la clase</span>
+                        </div>
+                        {selectedClass.videoUrl && (
+                          <a href={selectedClass.videoUrl} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs text-slate-600 transition-colors">
+                            <ExternalLink className="w-3 h-3" /> Abrir en nueva pestana
+                          </a>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
