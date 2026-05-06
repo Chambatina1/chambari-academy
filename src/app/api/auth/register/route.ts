@@ -1,46 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { hashPassword, generateToken } from '@/lib/auth'
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { hashPassword, createToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email, password, name, role } = body
+    const { name, email, password, role } = await request.json();
 
-    if (!email || !password || !name || !role) {
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
+    if (!name || !email || !password || !role) {
+      return NextResponse.json({ error: 'Todos los campos son obligatorios' }, { status: 400 });
     }
 
     if (!['TEACHER', 'STUDENT'].includes(role)) {
-      return NextResponse.json({ error: 'Role must be TEACHER or STUDENT' }, { status: 400 })
+      return NextResponse.json({ error: 'Rol inválido' }, { status: 400 });
     }
 
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
+    const existingUser = await db.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return NextResponse.json({ error: 'El correo electrónico ya está registrado' }, { status: 409 });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
-    }
-
-    const existing = await db.user.findUnique({ where: { email } })
-    if (existing) {
-      return NextResponse.json({ error: 'Email already registered' }, { status: 409 })
-    }
-
-    const hashedPassword = hashPassword(password)
+    const hashedPassword = await hashPassword(password);
     const user = await db.user.create({
-      data: { email, password: hashedPassword, name, role },
-    })
+      data: { name, email, password: hashedPassword, role },
+    });
 
-    const token = generateToken({ id: user.id, email: user.email, role: user.role, name: user.name })
+    const token = createToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name,
+    });
 
-    const { password: _, ...userWithoutPassword } = user
-
-    return NextResponse.json({ user: userWithoutPassword, token }, { status: 201 })
+    return NextResponse.json({
+      token,
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+    });
   } catch (error) {
-    console.error('Register error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Register error:', error);
+    return NextResponse.json({ error: 'Error al registrar usuario' }, { status: 500 });
   }
 }

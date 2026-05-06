@@ -1,73 +1,59 @@
-import crypto from 'crypto'
+import { createHash, randomBytes, createHmac } from 'crypto';
 
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET
-  if (!secret) {
-    throw new Error('JWT_SECRET environment variable is required')
-  }
-  return secret
+const JWT_SECRET = process.env.JWT_SECRET || 'chambari-academy-secret-key-2024';
+
+// Password hashing
+export async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString('hex');
+  const hash = createHash('sha512')
+    .update(password + salt)
+    .digest('hex');
+  return `${salt}:${hash}`;
 }
 
-interface TokenPayload {
-  id: string
-  email: string
-  role: string
-  name: string
+export async function verifyPassword(password: string, storedPassword: string): Promise<boolean> {
+  const [salt, hash] = storedPassword.split(':');
+  const verifyHash = createHash('sha512')
+    .update(password + salt)
+    .digest('hex');
+  return hash === verifyHash;
 }
 
-export function hashPassword(password: string): string {
-  const salt = crypto.randomBytes(16).toString('hex')
-  const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex')
-  return `${salt}:${hash}`
+// JWT token management (simplified)
+export function createToken(payload: { userId: string; email: string; role: string; name: string }): string {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const exp = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+  const body = Buffer.from(JSON.stringify({ ...payload, exp })).toString('base64url');
+  const signature = createHmac('sha256', JWT_SECRET)
+    .update(`${header}.${body}`)
+    .digest('base64url');
+  return `${header}.${body}.${signature}`;
 }
 
-export function verifyPassword(password: string, hash: string): boolean {
-  const [salt, storedHash] = hash.split(':')
-  const computedHash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex')
-  return crypto.timingSafeEqual(Buffer.from(storedHash), Buffer.from(computedHash))
-}
-
-export function generateToken(user: { id: string; email: string; role: string; name: string }): string {
-  const payload: TokenPayload & { iat: number; exp: number } = {
-    ...user,
-    iat: Date.now(),
-    exp: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-  }
-  const payloadStr = JSON.stringify(payload)
-  const base64 = Buffer.from(payloadStr).toString('base64url')
-  const signature = crypto.createHmac('sha256', getJwtSecret()).update(base64).digest('base64url')
-  return `${base64}.${signature}`
-}
-
-export function verifyToken(token: string): TokenPayload | null {
+export function verifyToken(token: string): { userId: string; email: string; role: string; name: string } | null {
   try {
-    const [base64, signature] = token.split('.')
-    if (!base64 || !signature) return null
+    const [header, body, signature] = token.split('.');
+    const expectedSignature = createHmac('sha256', JWT_SECRET)
+      .update(`${header}.${body}`)
+      .digest('base64url');
+    if (signature !== expectedSignature) return null;
 
-    const expectedSignature = crypto
-      .createHmac('sha256', getJwtSecret())
-      .update(base64)
-      .digest('base64url')
-
-    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
-      return null
-    }
-
-    const payload = JSON.parse(Buffer.from(base64, 'base64url').toString())
-
-    if (payload.exp && Date.now() > payload.exp) {
-      return null
-    }
-
-    return { id: payload.id, email: payload.email, role: payload.role, name: payload.name }
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString());
+    if (payload.exp && Date.now() > payload.exp) return null;
+    return {
+      userId: payload.userId,
+      email: payload.email,
+      role: payload.role,
+      name: payload.name,
+    };
   } catch {
-    return null
+    return null;
   }
 }
 
-export function getUserFromRequest(request: Request): TokenPayload | null {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null
-  const token = authHeader.substring(7)
-  return verifyToken(token)
+// Get user from request
+export function getUserFromRequest(request: Request): { userId: string; email: string; role: string; name: string } | null {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  return verifyToken(authHeader.slice(7));
 }

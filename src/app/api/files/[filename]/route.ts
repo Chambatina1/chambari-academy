@@ -1,84 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { readFile, stat } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { NextRequest, NextResponse } from 'next/server';
+import { promises as fs } from 'fs';
+import path from 'path';
 
-const MIME_TYPES: Record<string, string> = {
-  pdf: 'application/pdf',
-  doc: 'application/msword',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  ppt: 'application/vnd.ms-powerpoint',
-  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  xls: 'application/vnd.ms-excel',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  txt: 'text/plain',
-  csv: 'text/csv',
-  rtf: 'application/rtf',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-  png: 'image/png',
-  gif: 'image/gif',
-  webp: 'image/webp',
-  svg: 'image/svg+xml',
-  bmp: 'image/bmp',
-  ico: 'image/x-icon',
-  mp4: 'video/mp4',
-  webm: 'video/webm',
-  avi: 'video/x-msvideo',
-  mov: 'video/quicktime',
-  mkv: 'video/x-matroska',
-  mp3: 'audio/mpeg',
-  wav: 'audio/wav',
-  ogg: 'audio/ogg',
-  m4a: 'audio/mp4',
-  aac: 'audio/aac',
-  json: 'application/json',
-  xml: 'application/xml',
-  html: 'text/html',
-  htm: 'text/html',
-}
-
-function getUploadDir() {
-  if (existsSync('/data')) {
-    return '/data/uploads'
-  }
-  return join(process.cwd(), 'uploads')
-}
+const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ filename: string }> }
 ) {
   try {
-    const { filename } = await params
+    const { filename } = await params;
 
-    if (filename.includes('..') || filename.startsWith('/')) {
-      return NextResponse.json({ error: 'Invalid path' }, { status: 400 })
-    }
+    // Prevent directory traversal
+    const safeFilename = path.basename(filename);
+    const filePath = path.join(UPLOAD_DIR, safeFilename);
 
-    const uploadDir = getUploadDir()
-    const filePath = join(uploadDir, filename)
+    const fileBuffer = await fs.readFile(filePath);
 
-    const fileStat = await stat(filePath).catch(() => null)
-    if (!fileStat || !fileStat.isFile()) {
-      return NextResponse.json({ error: 'File not found' }, { status: 404 })
-    }
+    // Determine content type
+    const ext = safeFilename.split('.').pop()?.toLowerCase() || '';
+    const contentTypes: Record<string, string> = {
+      pdf: 'application/pdf',
+      doc: 'application/msword',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ppt: 'application/vnd.ms-powerpoint',
+      pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      xls: 'application/vnd.ms-excel',
+      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      gif: 'image/gif',
+      webp: 'image/webp',
+      mp4: 'video/mp4',
+      mp3: 'audio/mpeg',
+      txt: 'text/plain',
+      csv: 'text/csv',
+      zip: 'application/zip',
+      rar: 'application/vnd.rar',
+    };
 
-    const fileBuffer = await readFile(filePath)
-
-    const ext = filename.split('.').pop()?.toLowerCase() || ''
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream'
+    const contentType = contentTypes[ext] || 'application/octet-stream';
 
     return new NextResponse(fileBuffer, {
       headers: {
         'Content-Type': contentType,
-        'Content-Length': fileBuffer.length.toString(),
-        'Cache-Control': 'public, max-age=31536000, immutable',
-        'Content-Disposition': 'inline; filename="' + filename + '"',
+        'Content-Disposition': `inline; filename="${safeFilename}"`,
+        'Cache-Control': 'public, max-age=31536000',
       },
-    })
-  } catch (error) {
-    console.error('File serve error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    });
+  } catch {
+    return NextResponse.json({ error: 'Archivo no encontrado' }, { status: 404 });
   }
 }

@@ -1,105 +1,34 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { getUserFromRequest } from '@/lib/auth'
+import { NextRequest, NextResponse } from 'next/server';
+import { getUserFromRequest } from '@/lib/auth';
+import { db } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = getUserFromRequest(request)
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const userData = getUserFromRequest(request);
+    if (!userData) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url)
-    const studentId = searchParams.get('studentId')
-
-    // Students can only see their own progress; teachers can query by studentId
-    if (user.role === 'STUDENT') {
+    if (userData.role === 'STUDENT') {
       const progress = await db.progress.findMany({
-        where: { studentId: user.id },
-        include: {
-          lesson: { select: { id: true, title: true, module: { select: { id: true, title: true } } } },
-        },
+        where: { studentId: userData.userId },
+        include: { class: { select: { title: true, topic: true } } },
         orderBy: { updatedAt: 'desc' },
-      })
-      return NextResponse.json(progress)
+      });
+      return NextResponse.json({ progress });
     }
 
-    // Teacher
-    const where: Record<string, unknown> = {}
-    if (studentId) where.studentId = studentId
-
+    // Teacher sees all student progress
     const progress = await db.progress.findMany({
-      where,
       include: {
-        student: { select: { id: true, name: true, email: true, avatar: true } },
-        lesson: { select: { id: true, title: true, module: { select: { id: true, title: true } } } },
+        student: { select: { id: true, name: true, email: true } },
+        class: { select: { id: true, title: true, topic: true } },
       },
       orderBy: { updatedAt: 'desc' },
-    })
-
-    return NextResponse.json(progress)
+    });
+    return NextResponse.json({ progress });
   } catch (error) {
-    console.error('Get progress error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const user = getUserFromRequest(request)
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const body = await request.json()
-    const { studentId, lessonId, completed, progressPercent } = body
-
-    if (!lessonId) {
-      return NextResponse.json({ error: 'lessonId is required' }, { status: 400 })
-    }
-
-    // Validate progressPercent
-    if (progressPercent !== undefined) {
-      const pct = Number(progressPercent)
-      if (Number.isNaN(pct) || pct < 0 || pct > 100) {
-        return NextResponse.json({ error: 'progressPercent must be a number between 0 and 100' }, { status: 400 })
-      }
-    }
-
-    // Validate completed is boolean
-    if (completed !== undefined && typeof completed !== 'boolean') {
-      return NextResponse.json({ error: 'completed must be a boolean' }, { status: 400 })
-    }
-
-    // Students can only update their own progress
-    const targetStudentId = user.role === 'STUDENT' ? user.id : studentId
-    if (!targetStudentId) {
-      return NextResponse.json({ error: 'studentId is required' }, { status: 400 })
-    }
-
-    const progress = await db.progress.upsert({
-      where: {
-        studentId_lessonId: { studentId: targetStudentId, lessonId },
-      },
-      create: {
-        studentId: targetStudentId,
-        lessonId,
-        completed: completed || false,
-        progressPercent: progressPercent || 0,
-      },
-      update: {
-        completed: completed !== undefined ? completed : undefined,
-        progressPercent: progressPercent !== undefined ? progressPercent : undefined,
-      },
-      include: {
-        student: { select: { id: true, name: true } },
-        lesson: { select: { id: true, title: true } },
-      },
-    })
-
-    return NextResponse.json({ progress })
-  } catch (error) {
-    console.error('Update progress error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Progress error:', error);
+    return NextResponse.json({ error: 'Error al obtener progreso' }, { status: 500 });
   }
 }
