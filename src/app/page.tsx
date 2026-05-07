@@ -948,34 +948,27 @@ export default function Home() {
 
                 {/* Document inline - show directly in content tab */}
                 {selectedClass.documentName && selectedClass.documentUrl && (() => {
-                  const isDataUrl = selectedClass.documentUrl.startsWith('data:');
                   const docApiUrl = `/api/classes/${selectedClass.id}/document`;
                   const fullDocUrl = typeof window !== 'undefined' ? `${window.location.origin}${docApiUrl}` : '';
                   const fileName = selectedClass.documentName.toLowerCase();
+                  const isHtml = ['html', 'htm', 'htlm'].some(ext => fileName.endsWith(`.${ext}`));
                   const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].some(ext => fileName.endsWith(`.${ext}`));
-
-                  // Old file path that no longer exists
-                  if (!isDataUrl) {
-                    return (
-                      <Card className="border-amber-200 bg-amber-50/50 shadow-sm">
-                        <CardContent className="p-5 flex items-center gap-4">
-                          <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center shrink-0">
-                            <span className="text-3xl">{getFileIcon(selectedClass.documentName)}</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-slate-700 truncate">{selectedClass.documentName}</p>
-                            <p className="text-sm text-amber-600">Documento no disponible. Sube de nuevo desde el panel del profesor.</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  }
 
                   return (
                     <Card className="border-slate-200/60 shadow-md overflow-hidden">
                       <CardContent className="p-0">
-                        {/* PDF: inline iframe viewer */}
-                        {isPdf ? (
+                        {/* HTML: inline iframe */}
+                        {isHtml ? (
+                          <div className="relative w-full bg-white">
+                            <iframe
+                              src={docApiUrl}
+                              className="w-full h-[700px] border-0"
+                              title={selectedClass.documentName}
+                              sandbox="allow-same-origin"
+                            />
+                          </div>
+                        ) : isPdf ? (
+                          /* PDF: inline iframe viewer */
                           <div className="relative w-full bg-slate-100">
                             <iframe
                               src={docApiUrl}
@@ -984,7 +977,7 @@ export default function Home() {
                             />
                           </div>
                         ) : isImage ? (
-                          /* Image: inline viewer */
+                          /* Image: inline viewer with zoom */
                           <div className="p-2 bg-slate-50">
                             <img
                               src={docApiUrl}
@@ -1014,7 +1007,7 @@ export default function Home() {
                             />
                           </div>
                         ) : (
-                          /* Other files: fallback download card */
+                          /* Other files: info + download */
                           <div className="p-5 flex items-center gap-4">
                             <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0">
                               <span className="text-3xl">{getFileIcon(selectedClass.documentName)}</span>
@@ -1036,11 +1029,6 @@ export default function Home() {
                             <span className="text-sm font-medium text-slate-700 truncate max-w-[200px] sm:max-w-[400px]">{selectedClass.documentName}</span>
                           </div>
                           <div className="flex gap-2 shrink-0">
-                            <a href={docApiUrl} target="_blank" rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 text-xs text-slate-500 hover:text-blue-600 transition-colors">
-                              <ExternalLink className="w-3 h-3" />
-                              Abrir
-                            </a>
                             <a href={docApiUrl} download={selectedClass.documentName}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 text-xs text-slate-500 hover:text-blue-600 transition-colors">
                               <Download className="w-3 h-3" />

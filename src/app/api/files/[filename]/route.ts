@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
+const UPLOAD_DIRS = [
+  path.join(process.cwd(), 'upload'),
+  path.join(process.cwd(), 'uploads'),
+];
 
 export async function GET(
   _request: NextRequest,
@@ -13,9 +16,21 @@ export async function GET(
 
     // Prevent directory traversal
     const safeFilename = path.basename(filename);
-    const filePath = path.join(UPLOAD_DIR, safeFilename);
 
-    const fileBuffer = await fs.readFile(filePath);
+    let fileBuffer: Buffer | null = null;
+    for (const dir of UPLOAD_DIRS) {
+      try {
+        const filePath = path.join(dir, safeFilename);
+        fileBuffer = await fs.readFile(filePath);
+        break;
+      } catch {
+        // try next directory
+      }
+    }
+
+    if (!fileBuffer) {
+      return NextResponse.json({ error: 'Archivo no encontrado' }, { status: 404 });
+    }
 
     // Determine content type
     const ext = safeFilename.split('.').pop()?.toLowerCase() || '';
@@ -36,6 +51,9 @@ export async function GET(
       mp3: 'audio/mpeg',
       txt: 'text/plain',
       csv: 'text/csv',
+      html: 'text/html',
+      htlm: 'text/html',
+      htm: 'text/html',
       zip: 'application/zip',
       rar: 'application/vnd.rar',
     };

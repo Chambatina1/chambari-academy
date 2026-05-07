@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Chambari Academy</title>
+
+<meta name="theme-color" content="#6c8cff">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --bg-main: #f4f6fb;
+    --bg-card: #ffffff;
+    --primary: #4f6ef7;
+    --accent: #eef2ff;
+    --text-main: #1f2937;
+    --text-soft: #6b7280;
+    --border-soft: #e5e7eb;
+}
+
+body {
+    margin: 0;
+    background: var(--bg-main);
+    font-family: 'Inter', sans-serif;
+    color: var(--text-main);
+}
+
+/* Header */
+.header {
+    padding: 18px;
+    background: white;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.brand-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Layout */
+.container {
+    padding: 16px;
+}
+
+/* Módulo */
+.module-title {
+    font-size: 16px;
+    margin: 20px 0 10px;
+    color: var(--text-soft);
+}
+
+/* Cards */
+.card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border-soft);
+}
+
+/* Texto clase */
+.content-text {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-main);
+}
+
+/* Sección práctica */
+.practice-box {
+    margin-top: 14px;
+    padding: 14px;
+    background: var(--accent);
+    border-radius: 10px;
+}
+
+/* Pregunta */
+.question {
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+/* Opciones */
+.option {
+    margin-bottom: 6px;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.option:hover {
+    background: #e0e7ff;
+}
+
+/* iframe */
+iframe {
+    width: 100%;
+    border-radius: 10px;
+    margin-top: 12px;
+}
+
+/* Links */
+a {
+    display: block;
+    margin-top: 6px;
+    font-size: 14px;
+    color: var(--primary);
+    text-decoration: none;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .brand-title {
+        font-size: 18px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <div class="brand-title">Chambari Academy</div>
+</div>
+
+<div class="container" id="app">
+    Cargando...
+</div>
+
+<script>
+async function cargarDashboard() {
+    const res = await fetch('/api/dashboard');
+    const data = await res.json();
+    renderAlumno(data);
+}
+
+function renderAlumno(data) {
+    let html = '';
+
+    data.modulos.forEach(modulo => {
+        html += `<div class="module-title">${modulo.title}</div>`;
+
+        modulo.clases.forEach(clase => {
+            html += `<div class="card">`;
+
+            if (clase.text_content) {
+                const partes = clase.text_content.split('---EJERCICIOS_CHAMBARI---');
+
+                html += `<div class="content-text">${partes[0]}</div>`;
+
+                if (partes[1]) {
+                    try {
+                        const ejercicios = JSON.parse(partes[1]);
+                        html += `<div class="practice-box">
+                                    ${renderEjercicios(ejercicios)}
+                                 </div>`;
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+            }
+
+            if (clase.youtube_url) {
+                const videoId = extraerYouTubeID(clase.youtube_url);
+                html += `<iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`;
+            }
+
+            if (clase.meeting_url) {
+                html += `<iframe src="${clase.meeting_url}"></iframe>`;
+            }
+
+            for (let i = 1; i <= 5; i++) {
+                if (clase[`link_${i}`]) {
+                    html += `<a href="${clase[`link_${i}`]}" target="_blank">Material complementario</a>`;
+                }
+            }
+
+            if (clase.documents_json) {
+                const docs = JSON.parse(clase.documents_json);
+                docs.forEach(doc => {
+                    html += `<a href="${doc.url}" target="_blank">${doc.name}</a>`;
+                });
+            }
+
+            html += `</div>`;
+        });
+    });
+
+    document.getElementById('app').innerHTML = html;
+}
+
+function renderEjercicios(ejercicios) {
+    let html = '';
+
+    ejercicios.forEach((ej, i) => {
+        html += `<div class="question">${i + 1}. ${ej.pregunta}</div>`;
+
+        ej.opciones.forEach(op => {
+            html += `<div class="option">
+                        <input type="radio" name="ej_${i}">
+                        ${op}
+                     </div>`;
+        });
+    });
+
+    return html;
+}
+
+function extraerYouTubeID(url) {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
+    return match ? match[1] : '';
+}
+
+cargarDashboard();
+</script>
+
+</body>
+</html>
