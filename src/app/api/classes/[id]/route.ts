@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+export const maxDuration = 30;
 
 export async function GET(
   request: NextRequest,
@@ -20,6 +21,7 @@ export async function GET(
         topic: true,
         content: true,
         documentName: true,
+        documentUrl: true,
         videoUrl: true,
         published: true,
         createdAt: true,
@@ -36,16 +38,20 @@ export async function GET(
       return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 });
     }
 
-    // documentUrl can be huge (base64 of uploaded file) - check existence without fetching
-    const docCheck = await db.class.findFirst({
-      where: { id, documentUrl: { not: '' } },
-      select: { id: true },
-    });
+    // Decode document content inline if present (avoids separate fetch in frontend)
+    let documentContent = '';
+    if (cls.documentUrl && cls.documentUrl.startsWith('data:')) {
+      const commaIndex = cls.documentUrl.indexOf(',');
+      if (commaIndex !== -1) {
+        documentContent = Buffer.from(cls.documentUrl.substring(commaIndex + 1), 'base64').toString('utf-8');
+      }
+    }
 
     return NextResponse.json({
       class: {
         ...cls,
-        documentUrl: docCheck ? 'has-document' : '',
+        documentUrl: cls.documentUrl ? 'has-document' : '',
+        documentContent: documentContent || null,
       },
     });
   } catch (error) {
