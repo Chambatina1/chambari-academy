@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
@@ -127,7 +127,8 @@ export default function Home() {
   // Student state
   const [studentClasses, setStudentClasses] = useState<ClassItem[]>([]);
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
-  const [htmlContent, setHtmlContent] = useState<string>('');
+  const [htmlBlobUrl, setHtmlBlobUrl] = useState<string>('');
+  const [htmlLoading, setHtmlLoading] = useState(false);
   const [studentAnswers, setStudentAnswers] = useState<Record<string, string>>({});
   const [studentProgress, setStudentProgress] = useState<Record<string, { score: number; totalQuestions: number; completed: boolean; percentage: number }>>({});
   const [showResults, setShowResults] = useState(false);
@@ -296,14 +297,7 @@ export default function Home() {
         setLastScore(null);
         setIsMirrorMode(true);
         setView('class-view');
-        // Pre-load HTML document if applicable
-        const docName = (data.class.documentName || '').toLowerCase();
-        if (['html','htm','htlm'].some(e => docName.endsWith('.' + e)) && data.class.documentUrl) {
-          try {
-            const docRes = await api(`/api/classes/${data.class.id}/document`);
-            if (docRes.ok) { setHtmlContent(await docRes.text()); } else { setHtmlContent(''); }
-          } catch { setHtmlContent(''); }
-        } else { setHtmlContent(''); }
+        loadHtmlDocument(data.class.id, data.class.documentUrl, data.class.documentName);
       }
     } catch { toast.error('Error al cargar la clase'); }
   };
@@ -348,6 +342,37 @@ export default function Home() {
     setEditUploading(false);
   };
 
+  // Cleanup blob URL when component unmounts or class changes
+  useEffect(() => {
+    return () => {
+      if (htmlBlobUrl) URL.revokeObjectURL(htmlBlobUrl);
+    };
+  }, [htmlBlobUrl]);
+
+  const loadHtmlDocument = useCallback(async (classId: string, documentUrl: string, documentName: string) => {
+    const docName = (documentName || '').toLowerCase();
+    if (!['html','htm','htlm'].some(e => docName.endsWith('.' + e)) || !documentUrl) {
+      if (htmlBlobUrl) { URL.revokeObjectURL(htmlBlobUrl); setHtmlBlobUrl(''); }
+      return;
+    }
+    setHtmlLoading(true);
+    try {
+      const res = await fetch(`/api/classes/${classId}/document`);
+      if (res.ok) {
+        const text = await res.text();
+        const blob = new Blob([text], { type: 'text/html; charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        setHtmlBlobUrl(prev => { if (prev) URL.revokeObjectURL(prev); return url; });
+      } else {
+        if (htmlBlobUrl) { URL.revokeObjectURL(htmlBlobUrl); setHtmlBlobUrl(''); }
+      }
+    } catch {
+      if (htmlBlobUrl) { URL.revokeObjectURL(htmlBlobUrl); setHtmlBlobUrl(''); }
+    } finally {
+      setHtmlLoading(false);
+    }
+  }, [htmlBlobUrl]);
+
   // ============== STUDENT ACTIONS ==============
   const handleOpenClass = async (classId: string) => {
     try {
@@ -358,14 +383,7 @@ export default function Home() {
         setShowResults(false);
         setLastScore(null);
         setIsMirrorMode(false);
-        // Pre-load HTML document if applicable
-        const docName = (data.class.documentName || '').toLowerCase();
-        if (['html','htm','htlm'].some(e => docName.endsWith('.' + e)) && data.class.documentUrl) {
-          try {
-            const docRes = await api(`/api/classes/${data.class.id}/document`);
-            if (docRes.ok) { setHtmlContent(await docRes.text()); } else { setHtmlContent(''); }
-          } catch { setHtmlContent(''); }
-        } else { setHtmlContent(''); }
+        loadHtmlDocument(data.class.id, data.class.documentUrl, data.class.documentName);
         if (data.class.progress && data.class.progress.length > 0) {
           try { setStudentAnswers(JSON.parse(data.class.progress[0].answers || '{}')); } catch { setStudentAnswers({}); }
         } else { setStudentAnswers({}); }
@@ -974,18 +992,24 @@ export default function Home() {
                   return (
                     <Card className="border-slate-200/60 shadow-md overflow-hidden">
                       <CardContent className="p-0">
-                        {/* HTML: inline iframe via srcdoc */}
+                        {/* HTML: inline iframe via blob URL */}
                         {isHtml ? (
                           <div className="relative w-full bg-white">
-                            {htmlContent ? (
+                            {htmlLoading && !htmlBlobUrl && (
+                              <div className="flex items-center justify-center h-[200px] text-slate-400">
+                                <div className="flex items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Cargando documento...</div>
+                              </div>
+                            )}
+                            {htmlBlobUrl && (
                               <iframe
-                                srcDoc={htmlContent}
+                                src={htmlBlobUrl}
                                 className="w-full h-[700px] border-0"
                                 title={selectedClass.documentName}
                               />
-                            ) : (
-                              <div className="flex items-center justify-center h-[200px] text-slate-400">
-                                <div className="flex items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Cargando documento...</div>
+                            )}
+                            {!htmlLoading && !htmlBlobUrl && (
+                              <div className="flex items-center justify-center h-[200px] text-slate-400 text-sm">
+                                No se pudo cargar el documento.
                               </div>
                             )}
                           </div>
