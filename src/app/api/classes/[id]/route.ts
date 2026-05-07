@@ -10,7 +10,17 @@ export async function GET(
 
     const cls = await db.class.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        teacherId: true,
+        title: true,
+        topic: true,
+        content: true,
+        documentName: true,
+        videoUrl: true,
+        published: true,
+        createdAt: true,
+        updatedAt: true,
         exercises: { orderBy: { orderIndex: 'asc' } },
         teacher: { select: { name: true } },
         progress: {
@@ -23,7 +33,18 @@ export async function GET(
       return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 });
     }
 
-    return NextResponse.json({ class: cls });
+    // documentUrl can be huge (base64 of uploaded file) - check existence without fetching
+    const docCheck = await db.class.findFirst({
+      where: { id, documentUrl: { not: '' } },
+      select: { id: true },
+    });
+
+    return NextResponse.json({
+      class: {
+        ...cls,
+        documentUrl: docCheck ? 'has-document' : '',
+      },
+    });
   } catch (error) {
     console.error('Class GET error:', error);
     return NextResponse.json({ error: 'Error al obtener la clase' }, { status: 500 });

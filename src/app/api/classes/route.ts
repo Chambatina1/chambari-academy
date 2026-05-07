@@ -46,7 +46,17 @@ export async function GET(request: NextRequest) {
     const classes = await db.class.findMany({
       where: showAll ? {} : { published: true },
       orderBy: { createdAt: 'desc' },
-      include: {
+      select: {
+        id: true,
+        teacherId: true,
+        title: true,
+        topic: true,
+        content: true,
+        documentName: true,
+        videoUrl: true,
+        published: true,
+        createdAt: true,
+        updatedAt: true,
         _count: { select: { exercises: true, progress: true } },
         teacher: { select: { name: true } },
       },

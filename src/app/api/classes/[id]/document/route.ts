@@ -3,6 +3,9 @@ import { db } from '@/lib/db';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
+
 // Search both upload directories for the file
 const UPLOAD_DIRS = [
   path.join(process.cwd(), 'upload'),
