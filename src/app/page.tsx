@@ -94,6 +94,26 @@ const getYoutubeThumbnail = (url: string) => {
   return match ? `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg` : '';
 };
 
+// ============== TIKTOK HELPERS ==============
+const getTikTokEmbedUrl = (url: string) => {
+  if (!url) return '';
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.includes('tiktok.com')) return '';
+    const videoMatch = parsed.pathname.match(/\/video\/(\d+)/);
+    if (videoMatch) return `https://www.tiktok.com/embed/v2/${videoMatch[1]}`;
+    // Si es otro tipo de URL de TikTok, usar embed genérico
+    return `https://www.tiktok.com/embed/v2${parsed.pathname}`;
+  } catch {
+    return '';
+  }
+};
+
+const isTikTokUrl = (url: string) => {
+  if (!url) return false;
+  return /tiktok\.com/.test(url);
+};
+
 const getFileIcon = (filename: string) => {
   const ext = filename.split('.').pop()?.toLowerCase() || '';
   if (['pdf'].includes(ext)) return '📄';
@@ -842,7 +862,9 @@ export default function Home() {
     const answeredCount = Object.keys(studentAnswers).filter(id => studentAnswers[id] !== '').length;
     const totalExercises = selectedClass.exercises?.length || 0;
     const youtubeEmbed = getYoutubeEmbedUrl(selectedClass.videoUrl);
+    const tiktokEmbed = getTikTokEmbedUrl(selectedClass.videoUrl);
     const ytIsVideo = isYoutubeUrl(selectedClass.videoUrl);
+    const tkIsVideo = isTikTokUrl(selectedClass.videoUrl);
     const ytThumbnail = getYoutubeThumbnail(selectedClass.videoUrl);
     const isPdf = selectedClass.documentName?.toLowerCase().endsWith('.pdf');
     const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].some(ext => selectedClass.documentName?.toLowerCase().endsWith(`.${ext}`));
@@ -924,6 +946,18 @@ export default function Home() {
                             />
                           </div>
                         </div>
+                      ) : tiktokEmbed ? (
+                        /* TikTok embed */
+                        <div className="bg-slate-900 p-1">
+                          <div className="relative w-full pt-[177.78%]">
+                            <iframe
+                              src={tiktokEmbed}
+                              className="absolute inset-0 w-full h-full rounded-t-lg"
+                              allowFullScreen
+                              allow="encrypted-media; autoplay"
+                            />
+                          </div>
+                        </div>
                       ) : (
                         <video
                           src={selectedClass.videoUrl}
@@ -939,7 +973,7 @@ export default function Home() {
                         <span className="text-sm font-medium text-slate-700">Video de la clase</span>
                         <a href={selectedClass.videoUrl} target="_blank" rel="noopener noreferrer"
                           className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-                          <ExternalLink className="w-3 h-3" /> YouTube
+                          <ExternalLink className="w-3 h-3" /> {tkIsVideo ? 'TikTok' : 'YouTube'}
                         </a>
                       </div>
                     </CardContent>

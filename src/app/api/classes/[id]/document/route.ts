@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 export const maxDuration = 30;
 
 // Search both upload directories for the file
