@@ -168,7 +168,7 @@ function DocumentViewer({ classId, documentName }: { classId: string; documentNa
       <CardContent className="p-0">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-[200px] bg-slate-50">
-            <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mb-3" />
+            <div className="w-8 h-8 border-[3px] border-blue-500 border-t-transparent rounded-full animate-spin mb-3" />
             <p className="text-sm text-slate-500">Cargando documento...</p>
           </div>
         ) : error ? (
