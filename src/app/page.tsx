@@ -127,6 +127,7 @@ export default function Home() {
   // Student state
   const [studentClasses, setStudentClasses] = useState<ClassItem[]>([]);
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
+  const [htmlContent, setHtmlContent] = useState<string>('');
   const [studentAnswers, setStudentAnswers] = useState<Record<string, string>>({});
   const [studentProgress, setStudentProgress] = useState<Record<string, { score: number; totalQuestions: number; completed: boolean; percentage: number }>>({});
   const [showResults, setShowResults] = useState(false);
@@ -295,6 +296,14 @@ export default function Home() {
         setLastScore(null);
         setIsMirrorMode(true);
         setView('class-view');
+        // Pre-load HTML document if applicable
+        const docName = (data.class.documentName || '').toLowerCase();
+        if (['html','htm','htlm'].some(e => docName.endsWith('.' + e)) && data.class.documentUrl) {
+          try {
+            const docRes = await api(`/api/classes/${data.class.id}/document`);
+            if (docRes.ok) { setHtmlContent(await docRes.text()); } else { setHtmlContent(''); }
+          } catch { setHtmlContent(''); }
+        } else { setHtmlContent(''); }
       }
     } catch { toast.error('Error al cargar la clase'); }
   };
@@ -349,6 +358,14 @@ export default function Home() {
         setShowResults(false);
         setLastScore(null);
         setIsMirrorMode(false);
+        // Pre-load HTML document if applicable
+        const docName = (data.class.documentName || '').toLowerCase();
+        if (['html','htm','htlm'].some(e => docName.endsWith('.' + e)) && data.class.documentUrl) {
+          try {
+            const docRes = await api(`/api/classes/${data.class.id}/document`);
+            if (docRes.ok) { setHtmlContent(await docRes.text()); } else { setHtmlContent(''); }
+          } catch { setHtmlContent(''); }
+        } else { setHtmlContent(''); }
         if (data.class.progress && data.class.progress.length > 0) {
           try { setStudentAnswers(JSON.parse(data.class.progress[0].answers || '{}')); } catch { setStudentAnswers({}); }
         } else { setStudentAnswers({}); }
@@ -957,15 +974,20 @@ export default function Home() {
                   return (
                     <Card className="border-slate-200/60 shadow-md overflow-hidden">
                       <CardContent className="p-0">
-                        {/* HTML: inline iframe */}
+                        {/* HTML: inline iframe via srcdoc */}
                         {isHtml ? (
                           <div className="relative w-full bg-white">
-                            <iframe
-                              src={docApiUrl}
-                              className="w-full h-[700px] border-0"
-                              title={selectedClass.documentName}
-                              sandbox="allow-same-origin"
-                            />
+                            {htmlContent ? (
+                              <iframe
+                                srcDoc={htmlContent}
+                                className="w-full h-[700px] border-0"
+                                title={selectedClass.documentName}
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center h-[200px] text-slate-400">
+                                <div className="flex items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Cargando documento...</div>
+                              </div>
+                            )}
                           </div>
                         ) : isPdf ? (
                           /* PDF: inline iframe viewer */
