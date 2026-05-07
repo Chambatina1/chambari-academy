@@ -127,8 +127,6 @@ export default function Home() {
   // Student state
   const [studentClasses, setStudentClasses] = useState<ClassItem[]>([]);
   const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
-  const [htmlDocContent, setHtmlDocContent] = useState<string>('');
-  const [loadingDoc, setLoadingDoc] = useState(false);
   const [studentAnswers, setStudentAnswers] = useState<Record<string, string>>({});
   const [studentProgress, setStudentProgress] = useState<Record<string, { score: number; totalQuestions: number; completed: boolean; percentage: number }>>({});
   const [showResults, setShowResults] = useState(false);
@@ -297,12 +295,6 @@ export default function Home() {
         setLastScore(null);
         setIsMirrorMode(true);
         setView('class-view');
-        // Load HTML document content if needed
-        const dn = (data.class.documentName || '').toLowerCase();
-        if (['html','htm','htlm'].some(e => dn.endsWith('.' + e)) && data.class.documentUrl) {
-          setLoadingDoc(true); setHtmlDocContent('');
-          fetch(`/api/classes/${data.class.id}/document`).then(r => r.ok ? r.text() : '').then(t => { setHtmlDocContent(t); setLoadingDoc(false); }).catch(() => { setHtmlDocContent(''); setLoadingDoc(false); });
-        } else { setHtmlDocContent(''); }
       }
     } catch { toast.error('Error al cargar la clase'); }
   };
@@ -357,12 +349,6 @@ export default function Home() {
         setShowResults(false);
         setLastScore(null);
         setIsMirrorMode(false);
-        // Load HTML document content if needed
-        const dn = (data.class.documentName || '').toLowerCase();
-        if (['html','htm','htlm'].some(e => dn.endsWith('.' + e)) && data.class.documentUrl) {
-          setLoadingDoc(true); setHtmlDocContent('');
-          fetch(`/api/classes/${data.class.id}/document`).then(r => r.ok ? r.text() : '').then(t => { setHtmlDocContent(t); setLoadingDoc(false); }).catch(() => { setHtmlDocContent(''); setLoadingDoc(false); });
-        } else { setHtmlDocContent(''); }
         if (data.class.progress && data.class.progress.length > 0) {
           try { setStudentAnswers(JSON.parse(data.class.progress[0].answers || '{}')); } catch { setStudentAnswers({}); }
         } else { setStudentAnswers({}); }
@@ -971,25 +957,14 @@ export default function Home() {
                   return (
                     <Card className="border-slate-200/60 shadow-md overflow-hidden">
                       <CardContent className="p-0">
-                        {/* HTML: inline iframe via srcdoc */}
+                        {/* HTML: inline iframe via src */}
                         {isHtml ? (
                           <div className="relative w-full bg-white">
-                            {loadingDoc ? (
-                              <div className="flex items-center justify-center h-[200px] text-slate-400">
-                                <div className="flex items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Cargando documento...</div>
-                              </div>
-                            ) : htmlDocContent ? (
-                              <iframe
-                                srcDoc={htmlDocContent}
-                                className="w-full h-[700px] border-0"
-                                title={selectedClass.documentName}
-                                style={{ colorScheme: 'normal' }}
-                              />
-                            ) : (
-                              <div className="flex items-center justify-center h-[200px] text-slate-400 text-sm">
-                                No se pudo cargar el documento.
-                              </div>
-                            )}
+                            <iframe
+                              src={docApiUrl}
+                              className="w-full h-[700px] border-0"
+                              title={selectedClass.documentName}
+                            />
                           </div>
                         ) : isPdf ? (
                           /* PDF: inline iframe viewer */
