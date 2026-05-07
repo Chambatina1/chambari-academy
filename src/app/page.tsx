@@ -129,8 +129,12 @@ const getFileIcon = (filename: string) => {
 // ============== DOCUMENT VIEWER ==============
 function DocumentViewer({ classId, documentName }: { classId: string; documentName: string }) {
   const [loadError, setLoadError] = useState(false);
+  const [fullDocUrl, setFullDocUrl] = useState('');
   const docUrl = `/api/classes/${classId}/document`;
-  const fullDocUrl = typeof window !== 'undefined' ? `${window.location.origin}${docUrl}` : '';
+
+  useEffect(() => {
+    setFullDocUrl(`${window.location.origin}${docUrl}`);
+  }, [docUrl]);
 
   const fileName = (documentName || '').toLowerCase();
   const isHtml = ['html', 'htm', 'htlm'].some(ext => fileName.endsWith(`.${ext}`));
@@ -227,13 +231,15 @@ export default function Home() {
   const [lastScore, setLastScore] = useState<{ score: number; total: number; percentage: number } | null>(null);
   const [isMirrorMode, setIsMirrorMode] = useState(false);
 
-  // Auth state
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('chambari_teacher_auth') === 'true';
+  // Auth state - use useEffect to avoid hydration mismatch with sessionStorage
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoaded, setAuthLoaded] = useState(false);
+  useEffect(() => {
+    if (sessionStorage.getItem('chambari_teacher_auth') === 'true') {
+      setIsAuthenticated(true);
     }
-    return false;
-  });
+    setAuthLoaded(true);
+  }, []);
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
@@ -1223,6 +1229,9 @@ export default function Home() {
   };
 
   // ============== MAIN RENDER ==============
+  // Don't render teacher views until auth state is loaded from sessionStorage (avoids hydration flash)
+  if (role === 'TEACHER' && !authLoaded) return null;
+
   return (
     <>
       {view === 'teacher-dashboard' && (isAuthenticated ? renderTeacherDashboard() : renderLoginScreen())}
