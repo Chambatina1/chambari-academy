@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
@@ -128,61 +128,107 @@ const getFileIcon = (filename: string) => {
 
 // ============== DOCUMENT VIEWER ==============
 function DocumentViewer({ classId, documentName }: { classId: string; documentName: string }) {
+  const [htmlContent, setHtmlContent] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [fullDocUrl, setFullDocUrl] = useState('');
   const docUrl = `/api/classes/${classId}/document`;
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    setFullDocUrl(`${window.location.origin}${docUrl}`);
-  }, [docUrl]);
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
+    const fileName = (documentName || '').toLowerCase();
+    const isHtml = ['html', 'htm', 'htlm'].some(ext => fileName.endsWith(`.${ext}`));
+
+    if (!isHtml) {
+      // For non-HTML files (PDF, images, Office), use iframe/img directly - no fetch needed
+      setLoading(false);
+      return;
+    }
+
+    // For HTML files, fetch content and inject via dangerouslySetInnerHTML
+    // This avoids iframe issues (sandbox, Content-Security-Policy, etc.)
+    fetch(docUrl)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.text();
+      })
+      .then(html => {
+        setHtmlContent(html);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoadError(true);
+        setLoading(false);
+      });
+  }, [classId, documentName]);
 
   const fileName = (documentName || '').toLowerCase();
-  const isHtml = ['html', 'htm', 'htlm'].some(ext => fileName.endsWith(`.${ext}`));
   const isPdf = fileName.endsWith('.pdf');
   const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].some(ext => fileName.endsWith(`.${ext}`));
   const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].some(ext => fileName.endsWith(`.${ext}`));
 
-  const iframeStyle = 'w-full h-[700px] border-0';
-
   return (
     <Card className="border-slate-200/60 shadow-md overflow-hidden">
       <CardContent className="p-0">
-        {loadError ? (
-          <div className="flex flex-col items-center justify-center h-[200px] bg-red-50">
-            <p className="text-sm text-red-500 mb-3">No se pudo cargar el documento</p>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-[120px] bg-slate-50">
+            <div className="w-6 h-6 border-[3px] border-blue-500 border-t-transparent rounded-full animate-spin mb-2" />
+            <p className="text-xs text-slate-400">Cargando documento...</p>
+          </div>
+        ) : loadError ? (
+          <div className="flex flex-col items-center justify-center h-[120px] bg-red-50">
+            <p className="text-sm text-red-500 mb-2">No se pudo cargar el documento</p>
             <a href={docUrl} download={documentName}
               className="text-sm text-blue-600 hover:underline">Descargar archivo</a>
           </div>
-        ) : isOffice && fullDocUrl ? (
-          <iframe
-            src={`https://docs.google.com/gview?url=${encodeURIComponent(fullDocUrl)}&embedded=true`}
-            className={iframeStyle}
-            title={documentName}
+        ) : htmlContent ? (
+          /* HTML content: inject directly (most reliable for same-origin HTML) */
+          <div
+            className="document-content-wrapper"
+            style={{ minHeight: 200 }}
+            dangerouslySetInnerHTML={{ __html: htmlContent }}
           />
+        ) : isPdf ? (
+          <iframe src={docUrl} className="w-full h-[700px] border-0" title={documentName}
+            onError={() => setLoadError(true)} />
         ) : isImage ? (
           <div className="p-2 bg-slate-50">
             <img src={docUrl} alt={documentName} className="w-full rounded-lg max-h-[700px] object-contain mx-auto"
               onError={() => setLoadError(true)} />
           </div>
+        ) : isOffice ? (
+          /* Office docs: show download + info (Google Docs Viewer needs public URL) */
+          <div className="p-6 flex flex-col items-center gap-3 bg-slate-50">
+            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center">
+              <span className="text-3xl">{getFileIcon(documentName)}</span>
+            </div>
+            <div className="text-center">
+              <p className="font-medium text-slate-700">{documentName}</p>
+              <p className="text-sm text-slate-400 mt-1">Documento Office - descargalo para verlo</p>
+            </div>
+            <a href={docUrl} download={documentName}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+              <Download className="w-4 h-4" />
+              Descargar
+            </a>
+          </div>
         ) : (
-          <iframe
-            src={docUrl}
-            className={iframeStyle}
-            title={documentName}
-            onLoad={(e) => {
-              // Check if the iframe loaded actual content vs an error page
-              try {
-                const iframe = e.target as HTMLIFrameElement;
-                const doc = iframe.contentDocument;
-                if (doc && doc.body && doc.body.innerHTML.length < 100 && doc.querySelector('pre')) {
-                  setLoadError(true);
-                }
-              } catch {
-                // Cross-origin: content loaded successfully
-              }
-            }}
-            onError={() => setLoadError(true)}
-          />
+          /* Unknown type: generic download */
+          <div className="p-5 flex items-center gap-4">
+            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0">
+              <span className="text-3xl">{getFileIcon(documentName)}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-slate-700 truncate">{documentName}</p>
+              <p className="text-sm text-slate-400">Documento adjunto de la clase</p>
+            </div>
+            <a href={docUrl} download={documentName}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shrink-0">
+              Descargar
+            </a>
+          </div>
         )}
         {/* Document info bar */}
         <div className="p-3 flex items-center justify-between border-t border-slate-100">
@@ -190,13 +236,13 @@ function DocumentViewer({ classId, documentName }: { classId: string; documentNa
             <FileText className="w-4 h-4 text-blue-500" />
             <span className="text-sm font-medium text-slate-700 truncate max-w-[200px] sm:max-w-[400px]">{documentName}</span>
           </div>
-          <div className="flex gap-2 shrink-0">
+          {!htmlContent && !loading && (
             <a href={docUrl} download={documentName}
               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 text-xs text-slate-500 hover:text-blue-600 transition-colors">
               <Download className="w-3 h-3" />
               Descargar
             </a>
-          </div>
+          )}
         </div>
       </CardContent>
     </Card>
