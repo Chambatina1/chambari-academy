@@ -139,23 +139,21 @@ function DocumentViewer({ classId, documentName, documentContent }: {
   const isHtml = ['html', 'htm', 'htlm'].some(ext => fileName.endsWith(`.${ext}`));
   const isPdf = fileName.endsWith('.pdf');
   const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].some(ext => fileName.endsWith(`.${ext}`));
-  const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].some(ext => fileName.endsWith(`.${ext}`));
 
-  // For HTML: use content from API directly (most reliable - no fetch, no iframe)
+  // For HTML: use srcdoc iframe (creates proper document context, executes scripts, loads styles)
   if (isHtml && documentContent) {
     return (
       <Card className="border-slate-200/60 shadow-md overflow-hidden">
         <CardContent className="p-0">
-          <div
-            className="document-content-wrapper"
-            style={{ minHeight: 200 }}
-            dangerouslySetInnerHTML={{ __html: documentContent }}
+          <iframe
+            srcDoc={documentContent}
+            className="w-full h-[700px] border-0"
+            title={documentName}
+            sandbox="allow-scripts allow-same-origin"
           />
-          <div className="p-3 flex items-center justify-between border-t border-slate-100">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-medium text-slate-700 truncate max-w-[200px] sm:max-w-[400px]">{documentName}</span>
-            </div>
+          <div className="p-3 flex items-center gap-2 border-t border-slate-100">
+            <FileText className="w-4 h-4 text-blue-500" />
+            <span className="text-sm font-medium text-slate-700 truncate max-w-[300px]">{documentName}</span>
           </div>
         </CardContent>
       </Card>
