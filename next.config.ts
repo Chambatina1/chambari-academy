@@ -5,10 +5,22 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '20mb',
-    },
+  async headers() {
+    return [
+      {
+        source: "/api/classes/:id/document",
+        headers: [
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self'",
+          },
+        ],
+      },
+    ];
   },
 };
 

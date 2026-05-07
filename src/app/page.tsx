@@ -948,17 +948,59 @@ export default function Home() {
 
                 {/* Document inline - show directly in content tab */}
                 {selectedClass.documentName && selectedClass.documentUrl && (() => {
+                  const isDataUrl = selectedClass.documentUrl.startsWith('data:');
                   const docApiUrl = `/api/classes/${selectedClass.id}/document`;
+
+                  // Old file path that no longer exists
+                  if (!isDataUrl) {
+                    return (
+                      <Card className="border-amber-200 bg-amber-50/50 shadow-sm">
+                        <CardContent className="p-5 flex items-center gap-4">
+                          <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center shrink-0">
+                            <span className="text-3xl">{getFileIcon(selectedClass.documentName)}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-slate-700 truncate">{selectedClass.documentName}</p>
+                            <p className="text-sm text-amber-600">Documento no disponible. Sube de nuevo desde el panel del profesor.</p>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  }
+
                   return (
                     <Card className="border-slate-200/60 shadow-md overflow-hidden">
                       <CardContent className="p-0">
                         {isPdf ? (
-                          <div className="relative w-full h-[500px] bg-slate-100">
-                            <iframe src={docApiUrl} className="absolute inset-0 w-full h-full" title={selectedClass.documentName} />
+                          <div className="relative w-full bg-slate-100">
+                            <object
+                              data={docApiUrl}
+                              type="application/pdf"
+                              className="w-full h-[600px]"
+                              aria-label={selectedClass.documentName}
+                            >
+                              <div className="flex flex-col items-center justify-center h-[400px] p-6 text-center">
+                                <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mb-4">
+                                  <span className="text-4xl">📄</span>
+                                </div>
+                                <p className="font-medium text-slate-700 mb-1">{selectedClass.documentName}</p>
+                                <p className="text-sm text-slate-400 mb-4">Tu navegador no puede mostrar el PDF aqui</p>
+                                <div className="flex gap-3">
+                                  <a href={docApiUrl} target="_blank" rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                                    Abrir PDF
+                                  </a>
+                                  <a href={docApiUrl} download={selectedClass.documentName}
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors text-sm font-medium">
+                                    Descargar
+                                  </a>
+                                </div>
+                              </div>
+                            </object>
                           </div>
                         ) : isImage ? (
-                          <div className="p-4">
-                            <img src={selectedClass.documentUrl} alt={selectedClass.documentName} className="w-full rounded-lg max-h-[400px] object-contain bg-slate-50 p-2" />
+                          <div className="p-3 bg-slate-50">
+                            <img src={selectedClass.documentUrl} alt={selectedClass.documentName} className="w-full rounded-lg max-h-[500px] object-contain mx-auto" />
                           </div>
                         ) : (
                           <div className="p-5 flex items-center gap-4">
@@ -971,13 +1013,27 @@ export default function Home() {
                             </div>
                             <a href={docApiUrl} download={selectedClass.documentName}
                               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shrink-0">
-                              <ExternalLink className="w-4 h-4" /> Descargar
+                              Descargar
                             </a>
                           </div>
                         )}
-                        <div className="p-3 flex items-center gap-2 border-t border-slate-100">
-                          <FileText className="w-4 h-4 text-blue-500" />
-                          <span className="text-sm font-medium text-slate-700">{selectedClass.documentName}</span>
+                        <div className="p-3 flex items-center justify-between border-t border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-blue-500" />
+                            <span className="text-sm font-medium text-slate-700">{selectedClass.documentName}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            {isPdf && (
+                              <a href={docApiUrl} target="_blank" rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 text-xs text-slate-500 hover:text-blue-600 transition-colors">
+                                Abrir
+                              </a>
+                            )}
+                            <a href={docApiUrl} download={selectedClass.documentName}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 text-xs text-slate-500 hover:text-blue-600 transition-colors">
+                              Descargar
+                            </a>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
