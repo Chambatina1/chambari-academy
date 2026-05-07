@@ -23,7 +23,7 @@ import {
   Trophy, ArrowLeft, Send, Loader2,
   BookMarked, Brain, Target, Zap, Upload, FileText,
   Video, MonitorPlay, PenTool, Plus, X, ExternalLink,
-  Users, PlayCircle, FileUp, Sparkles, Lock, LogOut
+  Users, PlayCircle, FileUp, Sparkles, Lock, LogOut, Download
 } from 'lucide-react';
 
 // ============== TYPES ==============
@@ -950,6 +950,9 @@ export default function Home() {
                 {selectedClass.documentName && selectedClass.documentUrl && (() => {
                   const isDataUrl = selectedClass.documentUrl.startsWith('data:');
                   const docApiUrl = `/api/classes/${selectedClass.id}/document`;
+                  const fullDocUrl = typeof window !== 'undefined' ? `${window.location.origin}${docApiUrl}` : '';
+                  const fileName = selectedClass.documentName.toLowerCase();
+                  const isOffice = ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].some(ext => fileName.endsWith(`.${ext}`));
 
                   // Old file path that no longer exists
                   if (!isDataUrl) {
@@ -971,38 +974,47 @@ export default function Home() {
                   return (
                     <Card className="border-slate-200/60 shadow-md overflow-hidden">
                       <CardContent className="p-0">
+                        {/* PDF: inline iframe viewer */}
                         {isPdf ? (
                           <div className="relative w-full bg-slate-100">
-                            <object
-                              data={docApiUrl}
-                              type="application/pdf"
-                              className="w-full h-[600px]"
-                              aria-label={selectedClass.documentName}
-                            >
-                              <div className="flex flex-col items-center justify-center h-[400px] p-6 text-center">
-                                <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mb-4">
-                                  <span className="text-4xl">📄</span>
-                                </div>
-                                <p className="font-medium text-slate-700 mb-1">{selectedClass.documentName}</p>
-                                <p className="text-sm text-slate-400 mb-4">Tu navegador no puede mostrar el PDF aqui</p>
-                                <div className="flex gap-3">
-                                  <a href={docApiUrl} target="_blank" rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-                                    Abrir PDF
-                                  </a>
-                                  <a href={docApiUrl} download={selectedClass.documentName}
-                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors text-sm font-medium">
-                                    Descargar
-                                  </a>
-                                </div>
-                              </div>
-                            </object>
+                            <iframe
+                              src={docApiUrl}
+                              className="w-full h-[700px] border-0"
+                              title={selectedClass.documentName}
+                            />
                           </div>
                         ) : isImage ? (
-                          <div className="p-3 bg-slate-50">
-                            <img src={selectedClass.documentUrl} alt={selectedClass.documentName} className="w-full rounded-lg max-h-[500px] object-contain mx-auto" />
+                          /* Image: inline viewer */
+                          <div className="p-2 bg-slate-50">
+                            <img
+                              src={docApiUrl}
+                              alt={selectedClass.documentName}
+                              className="w-full rounded-lg max-h-[700px] object-contain mx-auto cursor-zoom-in"
+                              onClick={(e) => {
+                                const img = e.currentTarget;
+                                if (img.style.maxHeight === 'none') {
+                                  img.style.maxHeight = '700px';
+                                  img.classList.add('cursor-zoom-in');
+                                  img.classList.remove('cursor-zoom-out');
+                                } else {
+                                  img.style.maxHeight = 'none';
+                                  img.classList.remove('cursor-zoom-in');
+                                  img.classList.add('cursor-zoom-out');
+                                }
+                              }}
+                            />
+                          </div>
+                        ) : isOffice ? (
+                          /* Office docs: Google Docs Viewer inline */
+                          <div className="relative w-full bg-slate-100">
+                            <iframe
+                              src={`https://docs.google.com/gview?url=${encodeURIComponent(fullDocUrl)}&embedded=true`}
+                              className="w-full h-[700px] border-0"
+                              title={selectedClass.documentName}
+                            />
                           </div>
                         ) : (
+                          /* Other files: fallback download card */
                           <div className="p-5 flex items-center gap-4">
                             <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0">
                               <span className="text-3xl">{getFileIcon(selectedClass.documentName)}</span>
@@ -1017,20 +1029,21 @@ export default function Home() {
                             </a>
                           </div>
                         )}
+                        {/* Document info bar */}
                         <div className="p-3 flex items-center justify-between border-t border-slate-100">
                           <div className="flex items-center gap-2">
                             <FileText className="w-4 h-4 text-blue-500" />
-                            <span className="text-sm font-medium text-slate-700">{selectedClass.documentName}</span>
+                            <span className="text-sm font-medium text-slate-700 truncate max-w-[200px] sm:max-w-[400px]">{selectedClass.documentName}</span>
                           </div>
-                          <div className="flex gap-2">
-                            {isPdf && (
-                              <a href={docApiUrl} target="_blank" rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 text-xs text-slate-500 hover:text-blue-600 transition-colors">
-                                Abrir
-                              </a>
-                            )}
+                          <div className="flex gap-2 shrink-0">
+                            <a href={docApiUrl} target="_blank" rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 text-xs text-slate-500 hover:text-blue-600 transition-colors">
+                              <ExternalLink className="w-3 h-3" />
+                              Abrir
+                            </a>
                             <a href={docApiUrl} download={selectedClass.documentName}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-blue-50 text-xs text-slate-500 hover:text-blue-600 transition-colors">
+                              <Download className="w-3 h-3" />
                               Descargar
                             </a>
                           </div>
