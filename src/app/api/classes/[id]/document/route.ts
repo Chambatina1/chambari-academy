@@ -72,8 +72,18 @@ export async function GET(
         return NextResponse.json({ error: 'Tipo de documento desconocido' }, { status: 400 });
       }
 
-      const mimeType = mimeMatch[1];
+      let mimeType = mimeMatch[1];
       const buffer = Buffer.from(base64Data, 'base64');
+
+      // Override mime type based on filename extension (upload may have stored wrong type)
+      const ext = safeName.split('.').pop()?.toLowerCase() || '';
+      if (EXT_CONTENT_TYPES[ext]) {
+        mimeType = EXT_CONTENT_TYPES[ext];
+      } else if (buffer.slice(0, 15).toString('utf-8').trimStart().startsWith('<!DOCTYPE') || buffer.slice(0, 5).toString('utf-8').trimStart().startsWith('<html')) {
+        mimeType = 'text/html';
+      } else if (buffer.slice(0, 4).toString('utf-8') === '%PDF') {
+        mimeType = 'application/pdf';
+      }
 
       return new NextResponse(buffer, {
         status: 200,
