@@ -963,7 +963,7 @@ export default function Home() {
                             <p className="font-medium text-slate-700 truncate">{selectedClass.documentName}</p>
                             <p className="text-sm text-amber-600">Documento no disponible. Sube de nuevo desde el panel del profesor.</p>
                           </div>
-                        </div>
+                        </CardContent>
                       </Card>
                     );
                   }
